@@ -108,6 +108,16 @@ export function createHandler({ apiBase = '', publicDir, services }) {
         return sendJson(res, 400, { error: String(error.message || error) });
       }
     }
+    /* 试验匹配：GET ?subject=A；不传则由服务端取第一个并回写 subjectId */
+    if (pathname === apiPrefix + '/trials/match') {
+      if (req.method !== 'GET') return sendJson(res, 405, { error: 'Method not allowed' });
+      try {
+        const subject = new URL(req.url, 'http://localhost').searchParams.get('subject') || '';
+        return sendJson(res, 200, services.trialMatch(subject));
+      } catch (error) {
+        return sendJson(res, 500, { error: 'trialMatch failed', detail: String(error.message || error) });
+      }
+    }
     if (pathname.startsWith(apiPrefix + '/')) return sendJson(res, 404, { error: 'Unknown API route' });
 
     /* ---------- 静态 ---------- */

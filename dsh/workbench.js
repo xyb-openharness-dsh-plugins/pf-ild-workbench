@@ -7,7 +7,7 @@
 import { join } from 'node:path';
 import { openStore, closeStore, migrate } from './store.js';
 import { seedDemoData, hasDemoData } from './demo.js';
-import { readBootstrap, readProfile } from './readmodels.js';
+import { readBootstrap, readProfile, readTrialMatch } from './readmodels.js';
 import { DB_FILE, HOME_DIR } from '../lib/identity.js';
 import { version, displayVersion, build as buildDate } from '../lib/version.js';
 
@@ -56,6 +56,18 @@ export class Workbench {
     return readProfile(this.db, subjectId);
   }
 
+  /**
+   * 试验匹配（三档对照）。
+   * subjectId 必填：匹配结果依赖"谁的档案"，不传就退回第一个主体并**在返回值里写明**
+   * 用的是哪个主体——静默挑一个会让用户以为是自己的结果。
+   */
+  trialMatch(subjectId) {
+    this.open();
+    const sid = subjectId || this.db.prepare('SELECT subject_id FROM subjects ORDER BY rowid LIMIT 1').get()?.subject_id;
+    if (!sid) return { ruleSetVersion: null, generatedAt: null, entries: [], channelsNote: null, footerNote: null, subjectId: null };
+    return { ...readTrialMatch(this.db, sid), subjectId: sid };
+  }
+
   /** 供宿主 /health 用：只报事实，不报"是否已验证" */
   status() {
     return {
@@ -63,7 +75,7 @@ export class Workbench {
       homeDir: HOME_DIR,
       dbFile: DB_FILE,
       root: this.root,
-      capabilities: ['bootstrap', 'profile', 'health'],
+      capabilities: ['bootstrap', 'profile', 'health', 'trialMatch'],
       stats: this.stats,
       seeded: this.seeded ?? null,
       migrations: this.migrations ?? null,

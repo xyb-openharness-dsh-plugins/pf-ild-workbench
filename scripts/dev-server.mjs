@@ -28,7 +28,14 @@ workbench.open();
 const handler = createHandler({
   apiBase: '',
   publicDir: join(dirname(fileURLToPath(import.meta.url)), '..', 'public'),
-  services: { version, displayVersion, buildDate, capabilities: ['bootstrap', 'profile', 'health'], bootstrap: () => workbench.bootstrap() },
+  services: {
+    version, displayVersion, buildDate,
+    capabilities: ['bootstrap', 'profile', 'health', 'trialMatch'],
+    bootstrap: () => workbench.bootstrap(),
+    /* 与宿主形态共用同一个 Workbench 方法：dev 与装机的读模型必须是同一条路径，
+       否则"本地验过、装进去不一样"（ATTR 第 6 类的常见成因）。 */
+    trialMatch: (subjectId) => workbench.trialMatch(subjectId),
+  },
 });
 const { createServer } = await import('node:http');
 createServer(handler).listen(port, '127.0.0.1', () => {

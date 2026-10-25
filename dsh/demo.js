@@ -17,7 +17,7 @@ export function hasDemoData(db) {
 /** 单事务播种；返回写入了几个档案。 */
 export function seedDemoData(db, { force = false } = {}) {
   if (!force && hasDemoData(db)) return { skipped: true, subjects: 0 };
-  const { profiles, trials } = buildDemoProfiles();
+  const { profiles, trials, trialCriteria } = buildDemoProfiles();
 
   db.exec('BEGIN');
   try {
@@ -25,7 +25,7 @@ export function seedDemoData(db, { force = false } = {}) {
       for (const t of ['pathway_details', 'pathway_phases', 'diagnosis_gaps', 'care_rhythm', 'nutrition_logs',
         'transplant_items', 'imaging_records', 'med_records', 'ae_events', 'oxygen_records', 'pft_records',
         'viewpoints', 'candidates', 'documents', 'timeline_events', 'diagnosis_timeline', 'metric_points', 'metric_definitions', 'section_titles',
-        'subjects', 'trials']) {
+        'subjects', 'trials', 'trial_criteria', 'patient_facts', 'match_assessments', 'demo_meta']) {
         db.exec(`DELETE FROM ${t}`);
       }
     }
@@ -121,6 +121,39 @@ export function seedDemoData(db, { force = false } = {}) {
     /* source 存「哪条渠道查来的」（chinadrugtrials / ctv），不是恒为 placeholder；
        否则 readBootstrap 回读时与原型 demo-data.js 的 sourceChannel 对不上（PARITY 测试会拦）。 */
     trials.forEach((t) => insTrial.run(t.id, t.sourceChannel ?? 'placeholder', t.title, t.phase, t.status, t.sponsor, t.topic, t.last_verified, t.url));
+
+    /* 入组条目：ord 按生成器数组顺序（数据来源顺序，**不按可判定性排**）。 */
+    const insCrit = db.prepare(`INSERT INTO trial_criteria
+      (trial_record_id, ord, kind, category, rule_text, decidable, fact_key, source_note) VALUES (?,?,?,?,?,?,?,?)`);
+    for (const [i, c] of (trialCriteria ?? []).entries()) {
+      insCrit.run(c.trial, i, c.kind, c.category, c.text, c.decidable, c.fact_key ?? null, c.source_note ?? null);
+    }
+
+    /* 患者事实：只存档案里**确实有出处**的字段；没有的不写。
+       缺字段在读模型里表现为 undetermined（待确认），不拿空值冒充"符合"。 */
+    const insFact = db.prepare(`INSERT INTO patient_facts
+      (subject_id, fact_key, category, value_text, value_num, observed_on, source, evidence) VALUES (?,?,?,?,?,?,?,?)`);
+    for (const [sid, p] of Object.entries(profiles)) {
+      const add = (k, cat, v, num, on, src, ev) => insFact.run(sid, k, cat, v, num ?? null, on ?? null, src ?? null, ev ?? 'B');
+      add('diagnosis_text', 'diagnosis', p.etiology || null, null, null, '诊断原文', 'B');
+      add('hrct_pattern', 'imaging', (p.imaging?.rows?.[0] && p.imaging.rows[0][2]) || null, null, p.imaging?.rows?.[0]?.[0] ?? null, '影像结论原文', 'B');
+      add('ipf_excluded', 'diagnosis', /IPF|特发性肺纤维化/i.test(p.etiology || '') ? '是（写明 IPF）' : '否（未写明 IPF）', null, null, '诊断原文', 'B');
+      add('antifibrotic_current', 'medication',
+        (p.med?.rows || []).some((r) => /尼达布|吡非尼酮/.test(String(r[0] ?? '')) && !/已停/.test(String(r[3] ?? ''))) ? '在用' : '未在用',
+        null, null, '用药记录', 'B');
+      add('pathology_available', 'pathology', (p.imaging?.rows || []).length > 0 ? '有影像资料' : '无影像资料', null, null, '影像档案', 'B');
+      const fvc = (p.metrics || []).find((m) => m.key === 'fvc');
+      const ps = fvc?.points || [];
+      add('fvc_pred', 'pft', ps.length ? String(ps[ps.length - 1].v) : null, ps.length ? Number(ps[ps.length - 1].v) : null, ps.length ? ps[ps.length - 1].d : null, '肺功能报告', 'B');
+    }
+
+    /* 元数据：规则集版本 / 生成时间 / 免责与通道说明，读模型直接取，
+       不在请求时现场生成（否则同一份数据每次打开都显示不同"生成于"）。 */
+    const insMeta = db.prepare('INSERT INTO demo_meta (k, v) VALUES (?,?)');
+    insMeta.run('match_rule_set_version', '2026-10-25.1');
+    insMeta.run('match_generated_at', new Date().toISOString());
+    insMeta.run('match_footer_note', '本页只做「档案事实 ↔ 登记条目」的文字对照，不做入组资格判定，也不能替代研究者的评估。');
+    insMeta.run('match_channels_note', '已查通道：chinadrugtrials（1 条）、ctv/ClinicalTrials.gov（1 条）。未查：ChiCTR、WHO ICTRP、openFDA。未查 ≠ 无结果。');
     db.exec('COMMIT');
   } catch (error) {
     db.exec('ROLLBACK');

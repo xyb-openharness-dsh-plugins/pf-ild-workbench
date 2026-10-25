@@ -9,6 +9,7 @@
  *   - 私密内容（viewpoints.privacy='private'）在**数据层**过滤，不靠前端不画。
  */
 import { tableNames } from './store.js';
+import { buildMatchModel } from '../lib/trial-match.js';
 
 const asArray = (text, fallback = []) => {
   if (text === null || text === undefined || text === '') return fallback;
@@ -123,7 +124,50 @@ export function readBootstrap(db) {
   const trials = db.prepare(`SELECT nct_id, title, phase, status, sponsor, topic, last_verified, url, source
     FROM trials ORDER BY rowid`).all()
     .map((t) => ({ id: t.nct_id, title: t.title, phase: t.phase, status: t.status, sponsor: t.sponsor, topic: t.topic, last_verified: t.last_verified, url: t.url, sourceChannel: t.source }));
-  return { profiles, trials };
+  /* trialMatch 与 profiles 一样按档案全量带出：切档案是前端的事，
+     一次取全和原型 window.DEMO_DATA 的形状完全一致（原型 file:// 也是全量）。
+     单独一个 /api/trials/match 端点保留给"只要匹配、不要全量"的调用方。 */
+  const trialMatch = {};
+  for (const sid of Object.keys(profiles)) trialMatch[sid] = readTrialMatch(db, sid);
+  return { profiles, trials, trialMatch };
+}
+
+/**
+ * 读一个主体的试验匹配模型（三档对照，不含百分比）。
+ *
+ * 与 readBootstrap 分开：匹配依赖 subject，而 bootstrap 是「全量首页数据」，
+ * 把某个主体的匹配结果塞进 bootstrap 会让「切档案」时读到另一个人的对照结果。
+ *
+ * 参数缺失一律降级为「空对照」而不是抛错：登记条目没录完时页面要能开，
+ * 用 pending 说明「本地还没有条目」，不显示假的三档。
+ */
+export function readTrialMatch(db, subjectId) {
+  const meta = (k) => {
+    const row = db.prepare('SELECT v FROM demo_meta WHERE k = ?').get(k);
+    return row ? row.v : null;
+  };
+  const trials = db.prepare(`SELECT nct_id, title, phase, status, url, source, last_verified
+    FROM trials ORDER BY rowid`).all()
+    .map((t, i) => ({ recordId: t.nct_id, title: t.title, status: t.status, url: t.url, phase: t.phase, sourceChannel: t.source, last_verified: t.last_verified, ord: i }));
+  const criteria = db.prepare(`SELECT id, trial_record_id, ord, kind, category, rule_text, decidable, fact_key, source_note
+    FROM trial_criteria ORDER BY trial_record_id, ord`).all();
+  const facts = {};
+  for (const f of db.prepare(`SELECT fact_key, category, value_text, value_num, observed_on, source, evidence
+    FROM patient_facts WHERE subject_id = ?`).all(subjectId)) {
+    facts[f.fact_key] = {
+      value_text: f.value_text, value_num: f.value_num, observed_on: f.observed_on,
+      source: f.source, evidence: f.evidence, category: f.category,
+    };
+  }
+  return buildMatchModel({
+    trials,
+    criteria,
+    facts,
+    ruleSetVersion: meta('match_rule_set_version'),
+    generatedAt: meta('match_generated_at') ?? new Date().toISOString(),
+    footerNote: meta('match_footer_note'),
+    channelsNote: meta('match_channels_note'),
+  });
 }
 
 /** 供检查器：读模型用到的表必须都存在（防 0002 漏跑） */

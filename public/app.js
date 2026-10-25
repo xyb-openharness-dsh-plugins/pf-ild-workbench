@@ -55,7 +55,7 @@
     med: ['按药聚合', '剂量变更史'],
     imaging: ['检查列表', '报告原文'],
     visit: ['问题清单', '打印文本', '复诊节奏'],
-    transplant: ['完整度清单', '待问事项'],
+    transplant: ['完整度清单', '待问事项', '临床试验'],
     diagnosis: ['时间线', '信息断点'],
     docs: ['资料库', '待核对候选'],
     nutrition: ['进食记录', '体重趋势'],
@@ -652,6 +652,7 @@
   function pageTransplant() {
     const p = P(), s = sub('transplant');
     const rows = p.transplant.rows;
+    if (s === '临床试验') return trialHTML();
     if (s === '待问事项') {
       const todo = rows.filter((r) => r[2] === 0);
       return head('transplant', '移植评估信息自检', '待问事项', aiButton('transplant', '帮我把还没准备的项整理成下次要问的问题清单，不要给资格判断。'))
@@ -664,6 +665,75 @@
       + `<div class="notice warn" style="margin-bottom:16px"><b>这不是资格评估。</b>本页只帮你把「要带什么、要问什么」列清楚；是否适合移植、什么时候转诊，由移植团队与主管医生判断。</div>`
       + card(`完整度（${yes}/${rows.length} 项已准备）`, `<div class="check-list">${rows.map((r) => `<div class="check-item"><span class="mark ${r[2] === 1 ? 'yes' : 'no'}">${r[2] === 1 ? '✓' : '?'}</span><div class="body"><b>${esc(r[0])}</b><div class="guide">${esc(r[1])}</div><div class="note">${r[2] === 1 ? `最近一次：${esc(r[3] || '—')}｜${esc(r[4])}` : esc(r[4])}</div></div></div>`).join('')}</div>`,
         '来源：SPEC §四 F-TP-01；医学口径见 research/RESEARCH-MEDICAL-2026-10-25.md §6（移植评估属医生任务）。');
+  }
+
+  /* ---------------- 页签：临床试验（移植评估 → 临床试验） ----------------
+     用户要的三块：①基础病理建档 ②检索要素与结果 ③匹配与分析。
+     结构上刻意分成三段而不是一个长列表：
+     病理建档是"我有什么"、检索是"外面有什么"、匹配是"两者对上了没有"——
+     三段分开，用户才知道"待确认"是缺资料还是缺检索。 */
+  function trialHTML() {
+    const p = P(), sid = state.profile;
+    const m = (D.trialMatch && D.trialMatch[sid]) || null;
+    const evidence = (lv) => lv === 'A' ? '<span class="pill green">A 级</span>' : lv === 'B' ? '<span class="pill">B 级</span>' : '<span class="pill grey">未核实</span>';
+
+    /* ---- ① 基础病理建档 ---- */
+    const pathRows = [
+      ['诊断原文', p.etiology || '—', '来自病历；未改写、未归纳'],
+      ['HRCT 影像结论', (p.imaging?.rows?.[0] && p.imaging.rows[0][2]) || '—', p.imaging?.rows?.[0]?.[0] || ''],
+      ['病理资料（肺活检）', (p.imaging?.rows || []).length ? '有影像资料可复核' : '暂无', '登记页常要求"可供复核"'],
+      ['遗传 / 家族史', '未建结构化字段', '部分研究要求端粒酶等相关基因信息'],
+    ];
+    const pathCard = card('① 基础病理建档（本页只整理，不下诊断）',
+      `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>项目</th><th>本档案记录</th><th>说明</th></tr></thead><tbody>${
+        pathRows.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td class="note">${esc(r[2])}</td></tr>`).join('')
+      }</tbody></table></div>
+      <div class="notice grey" style="margin-top:12px">缺失的项不是"不符合"，是"本地还没有记为结构化字段"。补齐后下方对照会自动从「待确认」变成有结论的档位。</div>`,
+      '来源：SPEC §四 F-DX-01；医学口径见 research/RESEARCH-MEDICAL-2026-10-25.md（病理/基因在外周型 ILD 的意义）。');
+
+    /* ---- ② 检索要素与结果 ---- */
+    const searchCard = card('② 检索要素与结果（如实记未查通道）',
+      `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>检索式</th><th>命中</th><th>已查通道</th><th>未查通道</th></tr></thead><tbody>
+        <tr><td>疾病名（英文）</td><td>0</td><td>chinadrugtrials</td><td class="note">ChiCTR / ICTRP / ctv / 归档 共 5</td></tr>
+        <tr><td>疾病名（同义）</td><td>0</td><td>chinadrugtrials</td><td class="note">同上</td></tr>
+        <tr><td>疾病族</td><td><b>1</b></td><td>chinadrugtrials</td><td class="note">同上</td></tr>
+        <tr><td>抗纤维化用药</td><td>0</td><td>chinadrugtrials</td><td class="note">同上</td></tr>
+        <tr><td>肺移植</td><td>0</td><td>chinadrugtrials</td><td class="note">同上</td></tr>
+        <tr><td>肺康复</td><td>0</td><td>chinadrugtrials</td><td class="note">同上</td></tr>
+      </tbody></table></div>
+      <div class="notice warn" style="margin-top:12px"><b>未查 ≠ 无结果。</b>6 条检索式里只有 1 条命中；其余 5 个通道本轮未查，不能据此说"这个病没有临床试验"。</div>`,
+      '来源：data/trials/pf-ild/manifest.json（unified-trial MCP 四通道，2026-10-25）。');
+
+    /* ---- ③ 匹配与分析 ---- */
+    let matchBody;
+    if (!m || !m.entries.length) {
+      matchBody = '<div class="notice grey">本地还没有登记条目，无法做对照。这不表示"没有试验"，只表示"本页还没收录条目"。</div>';
+    } else {
+      matchBody = m.entries.map((e) => {
+        const rules = e.rules.map((r) => {
+          const tone = r.tier === 'satisfied' ? 'yes' : r.tier === 'conflict' ? 'no' : 'grey';
+          const mark = r.tier === 'satisfied' ? '✓' : r.tier === 'conflict' ? '!' : '?';
+          const label = r.tier === 'satisfied' ? '符合' : r.tier === 'conflict' ? '冲突' : '待确认';
+          return `<div class="check-item"><span class="mark ${tone}">${mark}</span><div class="body"><b>${esc(r.text)}</b>
+            <div class="note"><span class="pill ${tone === 'grey' ? 'grey' : tone === 'no' ? 'yellow' : 'green'}">${label}</span>
+            本地记录：${esc(r.mine || '未记录')}${r.src ? `　来源：${esc(r.src)}` : ''}</div></div></div>`;
+        }).join('');
+        const pend = e.pending.length
+          ? `<div class="notice grey" style="margin-top:10px"><b>${e.pending.length} 条待确认（不进三档）</b>：${e.pending.map((x) => esc(x.text)).join('；')}<br>原因是本地没有可用字段，或条目需要阈值比较而本仓 schema 未存比较符。这类条目<b>不猜</b>。</div>`
+          : '';
+        return `<div class="trial-item">
+          <div class="trial-head"><b>${esc(e.title)}</b><span class="pill grey">${esc(e.status || '状态未核实')}</span></div>
+          <div class="trial-counts"><span class="pill green">符合 ${e.counts.satisfied}</span><span class="pill yellow">冲突 ${e.counts.conflict}</span><span class="pill grey">待确认 ${e.counts.undetermined}</span><span class="note">登记号 ${esc(e.recordId)}${e.url ? ` · <a href="${esc(e.url)}" target="_blank" rel="noopener">登记页 ↗</a>` : ''}</span></div>
+          <div class="check-list">${rules}</div>${pend}
+        </div>`;
+      }).join('');
+    }
+    const matchCard = card('③ 匹配与分析（三档对照，不给百分比、不排序、不推荐）', matchBody,
+      esc(m?.footerNote || '本页只做文字对照，不做入组资格判定。') + (m?.channelsNote ? `　${esc(m.channelsNote)}` : ''));
+
+    return head('transplant', '移植评估信息自检', '临床试验', aiButton('transplant', '帮我把这页的对照结果整理成下次问医生的问题清单，不要判断我能不能入组。'))
+      + `<div class="notice warn" style="margin-bottom:16px"><b>这不是入组资格判定。</b>本页只做「你的档案记录 ↔ 登记条目原文」的文字对照；能不能参加由研究者和研究方案决定。</div>`
+      + pathCard + searchCard + matchCard;
   }
 
   /* ---------------- 页面：诊断追溯 ---------------- */

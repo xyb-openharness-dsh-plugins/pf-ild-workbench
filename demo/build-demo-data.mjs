@@ -21,6 +21,7 @@
 */
 import { DatabaseSync } from 'node:sqlite';
 import { writeFileSync, mkdirSync, realpathSync } from 'node:fs';
+import { buildMatchModel } from '../lib/trial-match.js';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -656,6 +657,9 @@ function writeSqlite() {
   const insMeta = db.prepare('INSERT INTO demo_meta (k, v) VALUES (?,?)');
   insMeta.run('disclaimer', '全部患者数据为虚构模拟，仅供原型演示；trials 表为真实登记摘录（登记状态未核实，以登记页为准）');
   insMeta.run('match_rule_set_version', '2026-10-25.1');
+  /* 生成时间落库：读模型直接取，不在每次请求时 new Date()——
+     否则同一份数据两次打开页面会显示不同的"生成于"，看起来像重新评估过。 */
+  insMeta.run('match_generated_at', new Date().toISOString());
   insMeta.run('match_footer_note', '本页只做「档案事实 ↔ 登记条目」的文字对照，不做入组资格判定，也不能替代研究者的评估。');
   insMeta.run('match_channels_note', '已查通道：chinadrugtrials（1 条）、ctv/ClinicalTrials.gov（1 条）。未查：ChiCTR、WHO ICTRP、openFDA。未查 ≠ 无结果。');
   insMeta.run('subject_count', String(Object.keys(DEMO.profiles).length));
@@ -664,15 +668,60 @@ function writeSqlite() {
   db.close();
 }
 
+/**
+ * 按档案算出三档对照（原型与开发版共用 lib/trial-match.js）。
+ *
+ * 事实来源与 dsh/demo.js 的 patient_facts 必须一致 —— 两处写死同一套提取规则会漂移，
+ * 所以这里从 DEMO.profiles 现取，且**只取档案里确实有出处的字段**：
+ * 没有的就不写 key，读侧自然得到 undetermined（待确认），不拿空值冒充"符合"。
+ */
+function factsOf(p) {
+  const f = {};
+  f.diagnosis_text = { value_text: p.etiology || null, source: '诊断原文', evidence: 'B' };
+  f.hrct_pattern = { value_text: (p.imaging?.rows?.[0] && p.imaging.rows[0][2]) || null, source: '影像结论原文', evidence: 'B' };
+  f.ipf_excluded = { value_text: /IPF|特发性肺纤维化/i.test(p.etiology || '') ? '是（写明 IPF）' : '否（未写明 IPF）', source: '诊断原文', evidence: 'B' };
+  f.antifibrotic_current = { value_text: (p.med?.rows || []).some((r) => /尼达尼布|吡非尼酮/.test(String(r[0] ?? '')) && !/已停/.test(String(r[3] ?? ''))) ? '在用' : '未在用', source: '用药记录', evidence: 'B' };
+  f.pathology_available = { value_text: (p.imaging?.rows || []).length > 0 ? '有影像资料' : '无影像资料', source: '影像档案', evidence: 'B' };
+  const fvc = (p.metrics || []).find((m) => m.key === 'fvc');
+  const ps = fvc?.points || [];
+  if (ps.length) f.fvc_pred = { value_text: String(ps[ps.length - 1].v), value_num: Number(ps[ps.length - 1].v), observed_on: ps[ps.length - 1].d, source: '肺功能报告', evidence: 'B' };
+  return f;
+}
+
+function buildAllTrialMatch() {
+  const criteria = DEMO.trialCriteria.map((c, i) => ({
+    id: i + 1, trial_record_id: c.trial, ord: i, kind: c.kind, category: c.category,
+    rule_text: c.text, decidable: c.decidable, fact_key: c.fact_key ?? null, source_note: c.source_note ?? null,
+  }));
+  const trials = DEMO.trials.map((t, i) => ({ recordId: t.id, title: t.title, status: t.status, url: t.url, ord: i }));
+  const out = {};
+  for (const [sid, p] of Object.entries(DEMO.profiles)) {
+    out[sid] = buildMatchModel({
+      trials, criteria, facts: factsOf(p),
+      ruleSetVersion: '2026-10-25.1',
+      generatedAt: DEMO.generatedAt ?? null,
+      footerNote: '本页只做「档案事实 ↔ 登记条目」的文字对照，不做入组资格判定，也不能替代研究者的评估。',
+      channelsNote: '已查通道：chinadrugtrials（1 条）、ctv/ClinicalTrials.gov（1 条）。未查：ChiCTR、WHO ICTRP、openFDA。未查 ≠ 无结果。',
+    });
+  }
+  return out;
+}
+
 function writePrototypeJs() {
   mkdirSync(P2, { recursive: true });
+  /* trialMatch 由**同一个纯函数** lib/trial-match.js 算出：
+     原型（file://）与开发版（SQLite 读模型）因此共享同一套三档结果，
+     不存在"原型一套、开发版另一套"的第二数据源。 */
   const js = '/* 由 demo/build-demo-data.mjs 生成；勿手改，改数据请改生成器后重新运行。 */\n'
-    + 'window.DEMO_DATA = ' + JSON.stringify({ profiles: DEMO.profiles, trials: DEMO.trials }) + ';\n';
+    + 'window.DEMO_DATA = ' + JSON.stringify({ profiles: DEMO.profiles, trials: DEMO.trials, trialMatch: buildAllTrialMatch() }) + ';\n';
   writeFileSync(join(P2, 'demo-data.js'), js);
 }
 
 export function buildDemoProfiles() {
-  return { profiles: DEMO.profiles, trials: DEMO.trials };
+  /* trialCriteria 必须一起返回：dsh/demo.js 的播种路径靠它写 trial_criteria 表。
+     漏掉它的症状很隐蔽 —— 播种成功、试验列表正常显示，但匹配页一条对照都没有
+     （entries=0 而不是报错），因为 criteria 表是空的。 */
+  return { profiles: DEMO.profiles, trials: DEMO.trials, trialCriteria: DEMO.trialCriteria };
 }
 
 const isMain = process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
