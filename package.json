@@ -13,6 +13,7 @@
   },
   "files": [
     "dsh",
+    "public",
     "lib",
     "assets",
     "cordis.patch.yml",
@@ -37,7 +38,8 @@
     "check:wording": "node scripts/check-wording.mjs",
     "probe:resp": "node scripts/probe-responsive.mjs",
     "check:schema": "node scripts/check-schema.mjs",
-    "fetch:trials": "node --disable-warning=ExperimentalWarning scripts/fetch-pf-ild-trials.mjs"
+    "fetch:trials": "node --disable-warning=ExperimentalWarning scripts/fetch-pf-ild-trials.mjs",
+    "build:client": "node scripts/build-client.mjs"
   },
   "dsh": {
     "bundle": {
@@ -58,10 +60,13 @@
     "@deepseek-ai/cordis": ">=4.0.1 <5",
     "@deepseek-ai/dsh-client-connection": ">=0.1.0-rc.0 <0.3.0-0",
     "@deepseek-ai/dsh-host-webserver": ">=0.1.0-rc.0 <0.3.0-0",
-    "@deepseek-ai/schemastery": ">=3.18.1 <4"
+    "@deepseek-ai/schemastery": ">=3.18.1 <4",
+    "@deepseek-ai/dsh-trapdoor": "^1.0.0",
+    "@deepseek-ai/dsh-web": "^1.0.0"
   },
   "engines": {
     "node": ">=22"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {}
 }

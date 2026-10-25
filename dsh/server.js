@@ -44,6 +44,19 @@ export function contentType(file) {
   return MIME[extname(file).toLowerCase()] || 'application/octet-stream';
 }
 
+/**
+ * 服务时注入（而不是构建时写死）：**同一份 public/ 要在两种形态下都正确**。
+ *   - `__API_BASE__`：独立启动 ''，宿主 '/api/pf-ild'；
+ *   - `__VERSION__` / `__VERSION_DISPLAY__`：来自 lib/version.js 唯一源。
+ * 这样 public/ 可以保持"原型定点移植"的产物，不因为两种形态分成两份。
+ */
+export function injectTokens(text, { apiBase = '', version = '', displayVersion = '' } = {}) {
+  return text
+    .replace(/__API_BASE__/g, apiBase)
+    .replace(/__VERSION_DISPLAY__/g, displayVersion)
+    .replace(/__VERSION__/g, version);
+}
+
 export function createHandler({ apiBase = '', publicDir, services }) {
   const sendJson = (res, status, body) => {
     res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
@@ -79,11 +92,15 @@ export function createHandler({ apiBase = '', publicDir, services }) {
       const index = resolveStatic(publicDir, '/index.html');
       if (!index) { res.writeHead(404); return res.end('Not found'); }
       res.writeHead(200, { 'content-type': MIME['.html'], 'cache-control': 'no-store' });
-      return res.end(readFileSync(index));
+      return res.end(injectTokens(readFileSync(index, 'utf8'), { apiBase, version: services.version, displayVersion: services.displayVersion }));
     }
     res.writeHead(200, { 'content-type': contentType(file), 'cache-control': 'no-store' });
     if (req.method === 'HEAD') return res.end();
-    res.end(readFileSync(file));
+    const raw = readFileSync(file, 'utf8');
+    const injected = /\.(?:html|css|js|mjs)$/.test(file)
+      ? injectTokens(raw, { apiBase, version: services.version, displayVersion: services.displayVersion })
+      : raw;
+    res.end(injected);
   };
 }
 
