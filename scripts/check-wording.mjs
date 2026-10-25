@@ -60,7 +60,8 @@ function walk(dir) {
   for (const entry of entries) {
     if (entry === 'node_modules' || entry.startsWith('.')) continue
     const full = join(dir, entry)
-    const st = statSync(full)
+    let st
+    try { st = statSync(full) } catch { continue }   /* 生成器并发重写时的瞬态消失，跳过即可 */
     if (st.isDirectory()) out.push(...walk(full))
     else if (st.isFile() && EXTS.has(extname(entry))) out.push(full)
   }
