@@ -26,21 +26,21 @@
 | M0 骨架 | 领取 + 建仓 + init + 接线前置 + 文档 9 件 | `npm run check` → `"staticPass": true`；`cordis.patch.yml` 含 `config.root: !!js dshHomePath('pf-ild-workbench')` 且注释不在首行；9 件文档存在且为本病种原创内容 | ✅ 实测通过（2026-10-25） | check 输出 staticPass true；Issue #33 已 claimed |
 | M1 调研 SPEC | 三路调研 + DIFF-MATRIX + SPEC + USER-RESEARCH + INTERACTION-DESIGN + HVT-REVIEW + SCENARIOS | 三路调研全部交付；重名率 55.0%→改名 44.4% ≤70%；HVT-REVIEW B=0/G=1/U=8；NHC #69 原文核到 A 级 | ✅ **G1 已签认**（2026-10-25） | research/{FAMILY-COMPARISON,USER-RESEARCH,RESEARCH-MEDICAL}-2026-10-25.md；HVT-REVIEW §3 检索式 |
 | M2 原型 | demo 唯一源 + 四件套 + 32 号折叠卡 + 30 号窄宽 + HVT X1–X4 + 独立评审 P0=0 + README 截图 ≥4 | 四件套存在；X1–X4 断言 PASS（23/23 覆盖、0 孤儿页）；探针 5 档 × 23 页零溢出；README 实渲 10 张含折叠收/展；独立评审 P0 待收 | ✅ 已完成（独立评审 P0=0，4 次尝试后由子代理实证 5 项；docs/DESIGN-REVIEW.md） | `npm run check:paths` PASS；`npm run probe:resp` 5×23 全绿；docs/screenshots/ |
-| M3 数据模型 | `schema/0001_initial.sql` + `freeze-contract.md` sha256 + 判读列断言 | 无 diagnosis/risk_level 类判定列（脚本断言）；freeze sha256 落档；G3 签认 | ✅ 草案完成（21 表 + sha256 + 判据行）· **待 G3 签认** | `npm run check:schema` PASS |
+| M3 数据模型 | `schema/0001_initial.sql` + `freeze-contract.md` sha256 + 判读列断言 | 无 diagnosis/risk_level 类判定列（脚本断言）；freeze sha256 落档；G3 签认 | ✅ 完成（0001–0004，30 表）· **G3 已签认** | `npm run check:schema` PASS |
 | M4 临床库 | `scripts/fetch-pf-ild-trials.mjs`（unified-trial MCP 四通道）→ 四件套 | `manifest = jsonl = sqlite` 三处条数一致；FAILED 通道如实记「未查过」 | ✅ 2 条 Trials.gov 在招（其余 3 通道未查，如实记） | `data/trials/pf-ild-trials.jsonl` |
 | M5 开发版 | 七步移植 + 宿主接线件 + MinerU 六部件 + apiBase 定稿契约 + test 五套 | `npm run check` 全绿 + `npm run audit` 0 fail；V1 | ✅ check/audit 通过（audit 2 项待人工已留痕）· 宿主形态未真机 | `docs/AUDIT-MANUAL-REVIEW.md` |
 | M6 装机 | 升版 → pack → 06 号四要素对照 tgz → corepack pnpm 装 → bundles 登记 → 新会话真机走查 → README 真机截图 | V2 真加载、V3 真机业务闭环，逐条有截图；`docs/release/<版本>/` | ⛔ 未执行（无真机环境） | — |
-| M7 发布 | tag + GitHub Release（tgz + sha256）+ CHANGELOG 发版段 | Release 页面存在、tgz 可下载、sha256 一致 | ✅ [v0.2.0 Release](https://github.com/xyb-openharness-dsh-plugins/pf-ild-workbench/releases/tag/v0.2.0) | `docs/release/v0.2.0/` |
-| M8 回填 | 组织 BACKLOG 状态行（31 号：只改状态与招募列，🔵 版本+日期+依据），走 PR 前先 pull | PR 合并 + 项目 RELEASE.md 动作表补一行 | ✅ PR [#39](https://github.com/xyb-openharness-dsh-plugins/.github/pull/39) 待合并 | `BACKLOG.md` |
-| M9 经验收敛 | 新坑→项目 DEV-REQUIREMENTS；通用坑→starter LESSONS；流程→编号文档+prompts；可断言→检查器待实施清单；starter CHANGELOG 记「从 PF-ILD 回收了什么」 | 至少一条「下一轮直接受益」的回流；`check-starter` + `npm test` 通过 | ✅ L2 回流 PR [starter#1](https://github.com/xyb-openharness-dsh-plugins/xyb-workbench-starter/pull/1)（三个闸门：版本字面量 / 静态引用完整性 L3 / 选择上限一致性 L2）；L1 记 L15–L20 | `docs/REFLOW-TO-STARTER.md` |
+| M7 发布 | tag + GitHub Release（tgz + sha256）+ CHANGELOG 发版段 | Release 页面存在、tgz 可下载、sha256 一致 | ✅ v0.2.1 已发布（2026-10-25，含临床试验三块 + 否定语义修正）| `docs/release/v0.2.1/` |
+| M8 回填 | 组织 BACKLOG 状态行（31 号：只改状态与招募列，🔵 版本+日期+依据），走 PR 前先 pull | PR 合并 + 项目 RELEASE.md 动作表补一行 | ✅ PR [#39](https://github.com/xyb-openharness-dsh-plugins/.github/pull/39) 已合并（2026-10-25） | `BACKLOG.md` |
+| M9 经验收敛 | 新坑→项目 DEV-REQUIREMENTS；通用坑→starter LESSONS；流程→编号文档+prompts；可断言→检查器待实施清单；starter CHANGELOG 记「从 PF-ILD 回收了什么」 | 至少一条「下一轮直接受益」的回流；`check-starter` + `npm test` 通过 | ✅ L2 回流 PR [starter#1](https://github.com/xyb-openharness-dsh-plugins/xyb-workbench-starter/pull/1) **已合并**（2026-10-25，squash；三个闸门：版本字面量 / 静态引用完整性 L3 / 选择上限一致性 L2）；L1 记 L15–L20 | `docs/REFLOW-TO-STARTER.md` |
 
 ## 闸口
 
 | 闸口 | 内容 | 状态 | 签认 |
 | --- | --- | --- | --- |
 | G1 | 业务流程与功能（SPEC + PATIENT-FLOW + INTERACTION-DESIGN 交签认，HVT B 级清零） | ✅ **已签认 2026-10-25** | 用户；B=0、G=0（S07 方案 A→F-NP-01）、U=8 如实声明；留痕 DESIGN-SESSION DESIGN-05/06/07 |
-| G2 | HTML 原型（P1 发布可见性 + X1–X4 路径一致性走查） | ⏳ 未签 | 待用户签认 |
-| G3 | 数据模型与数据流（未过不建表、不写迁移） | ⏳ 未签 | 待用户签认 |
+| G2 | HTML 原型（P1 发布可见性 + X1–X4 路径一致性走查） | ✅ **已签认**（2026-10-25 用户确认通过） | 用户 2026-10-25 回复「4.确认通过」 |
+| G3 | 数据模型与数据流（未过不建表、不写迁移） | ✅ **已签认**（2026-10-25 用户确认通过） | 用户 2026-10-25 回复「4.确认通过」；schema 0001–0004 按「只增不改」演进 |
 | V1 | 包级：`npm run check` 全绿 | M0 基线已 ✅（不代表 M5 完成） | — |
 | V2 | 装机：Desktop 真加载 | ⏳ | — |
 | V3 | 真机业务闭环 | ⏳ | — |

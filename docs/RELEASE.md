@@ -12,9 +12,9 @@ README/许可证/素材来源/运行依赖/更新说明：...
 
 | 动作 | 目标 | 真实结果/URL/证据 | 状态 |
 | --- | --- | --- | --- |
-| 本地安装 | Desktop/profile | | 未执行 |
-| Git push | 远端/分支/commit | | 未执行 |
-| Release/npm | tag/产物/hash | | 未执行 |
+| 本地安装 | Desktop/profile | 未装真机（无桌面环境）；dev-server + 真 Chrome 已验 | ⛔ 未执行 |
+| Git push | 远端/分支/commit | `main` @ `9c91bef`，Tag `v0.2.1` | ✅ 完成 |
+| Release/npm | tag/产物/hash | https://github.com/xyb-openharness-dsh-plugins/pf-ild-workbench/releases/tag/v0.2.1 ｜ tgz sha256 `f214038b7ba4d2bb21672cf38233eeb52d615d2786a498ab3ae91e8dbc855361` | ✅ 完成 |
 | 市场 PR | 官方目录仓库 | | 未执行 |
 | 上架 | 公开 catalog | | 未执行 |
 
