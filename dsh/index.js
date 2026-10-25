@@ -43,8 +43,11 @@ export const API_BASE_HOSTED = `/api/${API_PREFIX}`
 export function createHostHandler(ctx, workbench) {
   const services = {
     version, displayVersion,
-    capabilities: ['bootstrap', 'profile', 'health'],
+    capabilities: ['bootstrap', 'profile', 'health', 'trialMatch'],
     bootstrap: () => workbench.bootstrap(),
+    /* 宿主形态必须和 dev-server 用同一个 Workbench 方法，
+       否则"本地验过、装进去 404"——临床试验页就是在宿主里直接 404。 */
+    trialMatch: (subjectId) => workbench.trialMatch(subjectId),
   }
   const inner = createHandler({ apiBase: API_BASE_HOSTED, publicDir: PUBLIC_DIR, services })
   return (req, res) => {
@@ -62,9 +65,18 @@ export function createHostHandler(ctx, workbench) {
   }
 }
 
-export function apply(ctx) {
+/**
+ * config 是**第二个参数**，不是 `ctx.config`。
+ *
+ * 2026-10-25 装机实测：写成 `ctx.config?.root` 时宿主直接报
+ *   `cannot get property "config" without inject`
+ * —— Cordis 的服务访问守卫要求把 'config' 声明进 inject，而 config 本来就不走服务通道。
+ * 本地桩件（smoke-activate）放行了 `ctx.config`，所以 `npm run check` 全绿、
+ * 装进 Desktop 才炸：又一例「dev 全绿 ≠ 装机能用」。
+ */
+export function apply(ctx, config = {}) {
   if (!ctx.webServer?.register) throw new Error('Desktop webServer.register is unavailable')
-  const root = ctx.config?.root
+  const root = config?.root
   if (typeof root !== 'string' || root.trim() === '') {
     /* 不裸 throw 白屏：登记一个返回可读错误的健康接口，让前端能显示原因 */
     ctx.effect(() => ctx.webServer.register({

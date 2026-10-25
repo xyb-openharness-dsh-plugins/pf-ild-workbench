@@ -73,6 +73,23 @@ export function injectTokens(text, { apiBase = '', version = '', displayVersion 
     .replace(/__BUILD_DATE__/g, buildDate);
 }
 
+/**
+ * 挂在宿主前缀下的静态资源必须**先剥前缀再解析**（2026-10-25 装机前实测，第 6 类复现）：
+ *   宿主把插件挂在 `/pf-ild` 与 `/api/pf-ild`，浏览器请求 `/pf-ild/app.js`。
+ *   不剥前缀 → 去 `public/pf-ild/app.js` 找 → 找不到 → SPA 兜底递回 index.html
+ *   → HTML 被当 JS 解析 → `SyntaxError: Unexpected token '<'` → 业务区全白。
+ *   而 dev-server 挂在根上，**本地永远看不到这个故障**。
+ */
+const UI_MOUNTS = ['/pf-ild', '/api/pf-ild'];
+
+function stripMount(pathname) {
+  for (const m of UI_MOUNTS) {
+    if (pathname === m) return '/';
+    if (pathname.startsWith(m + '/')) return pathname.slice(m.length);
+  }
+  return pathname;
+}
+
 export function createHandler({ apiBase = '', publicDir, services }) {
   const sendJson = (res, status, body) => {
     res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
@@ -123,7 +140,9 @@ export function createHandler({ apiBase = '', publicDir, services }) {
     /* ---------- 静态 ---------- */
     if (req.method !== 'GET' && req.method !== 'HEAD') return sendJson(res, 405, { error: 'Method not allowed' });
     if (!publicDir || !existsSync(publicDir)) { res.writeHead(500); return res.end('public dir missing'); }
-    const file = resolveStatic(publicDir, pathname === '/' ? '/index.html' : pathname);
+    /* 宿主形态（apiBase 非空）才需要剥前缀；独立启动挂在根上，路径原样 */
+    const staticPath = apiBase === '' ? pathname : stripMount(pathname);
+    const file = resolveStatic(publicDir, staticPath === '/' ? '/index.html' : staticPath);
     if (!file) {
       /* SPA 兜底：未知路径回 index.html（但 API 已在上方拦掉） */
       const index = resolveStatic(publicDir, '/index.html');
