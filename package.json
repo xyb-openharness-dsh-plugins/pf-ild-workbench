@@ -23,7 +23,7 @@
     "schema"
   ],
   "scripts": {
-    "check": "node --check dsh/index.js && node --check lib/client.js && node scripts/check-workbench-package.mjs . && node scripts/check-host-contract.mjs",
+    "check": "node --check dsh/index.js && node --check lib/client.js && node scripts/check-workbench-package.mjs . && node scripts/check-host-contract.mjs && node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/*.test.mjs && node scripts/build-version.mjs --check && node scripts/check-wording.mjs",
     "check:host": "node scripts/check-host-contract.mjs",
     "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/*.test.mjs",
     "audit": "node scripts/check-conformance.mjs .",
