@@ -121,6 +121,10 @@ function transformApp(src) {
 
   /* 3) 版本字面量 → 注入占位 */
   out = out.replace(/v0\.1\.0/g, '__VERSION_DISPLAY__');
+  /* 开发版数据来自 /api/bootstrap，**不再有 demo-data.js 这个脚本**。
+     留着它会让浏览器去请求一个不存在的 JS，服务端 SPA 兜底返回 index.html，
+     于是报 `SyntaxError: Unexpected token '<'`——页面看起来"能开",但整页脚本全废。 */
+  out = out.replace(/\s*<script src="demo-data\.js"><\/script>/g, '');
 
   /* 4) 头部注释：标明这是开发版 */
   out = out.replace(
@@ -139,6 +143,10 @@ function transformHtml(src) {
   /* 其余版本字面量（版本徽标 / 页脚）一律占位：版面由服务端注入，不在页面写死
      —— 手写死版本号 = 三处版本打架的复发点（家族高频故障）。 */
   out = out.replace(/v0\.1\.0/g, '__VERSION_DISPLAY__');
+  /* 开发版数据来自 /api/bootstrap，**不再有 demo-data.js 这个脚本**。
+     留着它会让浏览器去请求一个不存在的 JS，服务端 SPA 兜底返回 index.html，
+     于是报 `SyntaxError: Unexpected token '<'`——页面看起来"能开",但整页脚本全废。 */
+  out = out.replace(/\s*<script src="demo-data\.js"><\/script>/g, '');
   /* 构建日期同理：占位由注入器填，避免"页面显示的构建日永远是原型那天" */
   out = out.replace(/2026-10-25/g, '__BUILD_DATE__');
   return out;

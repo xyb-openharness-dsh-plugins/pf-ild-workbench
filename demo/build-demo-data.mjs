@@ -397,8 +397,54 @@ const DATA = {
     },
   },
   trials: [
-    { id: 'NCT00000001', title: '（示例占位）PF-ILD 抗纤维化治疗的真实世界研究', phase: '观察性', status: '未核实', sponsor: '待 M4 检索填充', topic: '抗纤维化', last_verified: '2026-10-25', url: 'https://clinicaltrials.gov/' },
-    { id: 'NCT00000002', title: '（示例占位）进展性肺纤维化患者肺康复随机对照研究', phase: '未核实', status: '未核实', sponsor: '待 M4 检索填充', topic: '肺康复', last_verified: '2026-10-25', url: 'https://clinicaltrials.gov/' },
+    {
+      id: 'CTR20213153', title: 'BMS-986278 治疗肺纤维化的疗效与安全性的 2 期研究',
+      phase: '2 期', status: '进行中 · 招募完成', sponsor: 'Bristol-Myers Squibb',
+      topic: '抗纤维化（LPA1 拮抗剂）', last_verified: '2026-10-25',
+      url: 'https://www.chinadrugtrials.org.cn/',
+      sourceChannel: 'chinadrugtrials',
+    },
+    {
+      id: 'NCT05606939', title: 'Progressive Fibrosing Interstitial Lung Disease Registry（登记研究）',
+      phase: '观察性', status: '招募中', sponsor: '待核对登记页',
+      topic: '进展性纤维化性间质性肺疾病自然史', last_verified: '2026-10-25',
+      url: 'https://clinicaltrials.gov/study/NCT05606939',
+      sourceChannel: 'ctv',
+    },
+  ],
+  /* 入组/排除条目（原文摘录，逐条标"本地能否判定"）。
+     decidable=0 一律进"待确认"，**不进三档** —— 本地没有结构化字段时不许猜。
+     真实登记页的标准更长，本仓只收录能落到档案字段上的几条，且注明来源。 */
+  trialCriteria: [
+    /* --- CTR20213153 --- */
+    { trial: 'CTR20213153', kind: 'inclusion', category: 'diagnosis',
+      text: '确诊为进展性纤维化性间质性肺疾病（PF-ILD）', decidable: 1, fact_key: 'diagnosis_text',
+      source_note: '登记页入组标准；本地取诊断原文对照' },
+    { trial: 'CTR20213153', kind: 'inclusion', category: 'imaging',
+      text: ' HRCT 显示纤维化改变（蜂窝影/牵拉性支气管扩张等）', decidable: 1, fact_key: 'hrct_pattern',
+      source_note: '本地取影像结论原文对照' },
+    { trial: 'CTR20213153', kind: 'inclusion', category: 'pft',
+      text: 'FVC %pred 不低于 45%（具体阈值以登记页为准）', decidable: 0, fact_key: 'fvc_pred',
+      source_note: '**需要阈值比较，本仓 schema 未存比较符 → 进待确认，不猜**' },
+    { trial: 'CTR20213153', kind: 'exclusion', category: 'diagnosis',
+      text: '排除特发性肺纤维化（IPF）明确诊断者', decidable: 1, fact_key: 'ipf_excluded',
+      source_note: '本地取诊断原文是否写明 IPF' },
+    { trial: 'CTR20213153', kind: 'exclusion', category: 'medication',
+      text: '排除正在使用其他抗纤维化药物者（以登记页为准）', decidable: 1, fact_key: 'antifibrotic_current',
+      source_note: '本地取当前用药记录' },
+    { trial: 'CTR20213153', kind: 'exclusion', category: 'organ',
+      text: '排除中重度肝功能异常者', decidable: 0, fact_key: null,
+      source_note: '阈值未公开 → 待确认' },
+    /* --- NCT05606939 --- */
+    { trial: 'NCT05606939', kind: 'inclusion', category: 'diagnosis',
+      text: '试验要求：已有医生记录的 ILD 诊断，且符合进展性纤维化表型', decidable: 1, fact_key: 'diagnosis_text' },
+    { trial: 'NCT05606939', kind: 'inclusion', category: 'pathology',
+      text: '有 HRCT 或肺活检病理资料可供复核', decidable: 1, fact_key: 'pathology_available' },
+    { trial: 'NCT05606939', kind: 'inclusion', category: 'genetics',
+      text: '提供遗传/家族史信息（如已知的端粒酶或表面活性物质相关基因变异）', decidable: 0, fact_key: 'genetic_variant',
+      source_note: '本仓未建立基因检测结构化字段 → 待确认；**这也是该病确实需要病理/基因建档的证据**' },
+    { trial: 'NCT05606939', kind: 'exclusion', category: 'other',
+      text: '排除无法完成随访者', decidable: 0, fact_key: null },
   ],
 };
 
@@ -420,6 +466,7 @@ function assemble(P, labs) {
 const DEMO = {
   profiles: { A: assemble(DATA.profiles.A, labsA), B: assemble(DATA.profiles.B, labsB) },
   trials: DATA.trials,
+  trialCriteria: DATA.trialCriteria,
 };
 
 /* ---------------- SQLite（显式列名，禁位置式 INSERT） ---------------- */
@@ -431,7 +478,7 @@ DROP TABLE IF EXISTS pft_records; DROP TABLE IF EXISTS oxygen_records;
 DROP TABLE IF EXISTS ae_events; DROP TABLE IF EXISTS med_records;
 DROP TABLE IF EXISTS imaging_records; DROP TABLE IF EXISTS transplant_items;
 DROP TABLE IF EXISTS nutrition_logs; DROP TABLE IF EXISTS viewpoints;
-DROP TABLE IF EXISTS trials; DROP TABLE IF EXISTS demo_meta;
+DROP TABLE IF EXISTS trials; DROP TABLE IF EXISTS trial_criteria; DROP TABLE IF EXISTS patient_facts; DROP TABLE IF EXISTS match_assessments; DROP TABLE IF EXISTS demo_meta;
 
 CREATE TABLE subjects (
   subject_id TEXT PRIMARY KEY, name TEXT NOT NULL, sex TEXT NOT NULL, age INTEGER NOT NULL,
@@ -496,7 +543,26 @@ CREATE TABLE viewpoints (
 );
 CREATE TABLE trials (
   nct_id TEXT PRIMARY KEY, title TEXT NOT NULL, phase TEXT NOT NULL, status TEXT NOT NULL,
-  sponsor TEXT NOT NULL, topic TEXT NOT NULL, last_verified TEXT NOT NULL, url TEXT NOT NULL
+  sponsor TEXT NOT NULL, topic TEXT NOT NULL, last_verified TEXT NOT NULL, url TEXT NOT NULL,
+  ord INTEGER NOT NULL DEFAULT 0, source_channel TEXT
+);
+CREATE TABLE trial_criteria (
+  id INTEGER PRIMARY KEY, trial_record_id TEXT NOT NULL, ord INTEGER NOT NULL DEFAULT 0,
+  kind TEXT NOT NULL CHECK (kind IN ('inclusion','exclusion')),
+  category TEXT NOT NULL, rule_text TEXT NOT NULL,
+  decidable INTEGER NOT NULL DEFAULT 0 CHECK (decidable IN (0,1)),
+  fact_key TEXT, source_note TEXT
+);
+CREATE TABLE patient_facts (
+  id INTEGER PRIMARY KEY, subject_id TEXT NOT NULL, fact_key TEXT NOT NULL, category TEXT NOT NULL,
+  value_text TEXT, value_num REAL, observed_on TEXT, source TEXT,
+  evidence TEXT NOT NULL DEFAULT '未核实' CHECK (evidence IN ('A','B','未核实')),
+  UNIQUE (subject_id, fact_key)
+);
+CREATE TABLE match_assessments (
+  id INTEGER PRIMARY KEY, subject_id TEXT NOT NULL, profile_revision INTEGER,
+  rule_set_version TEXT NOT NULL, generated_at TEXT NOT NULL,
+  judgments_json TEXT NOT NULL, note TEXT
 );
 CREATE TABLE demo_meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 `);
@@ -564,10 +630,34 @@ function writeSqlite() {
     p.viewpoints.forEach((r) => insVp.run(k, r[0], r[1], r[2]));
   }
   const insTrial = db.prepare(`INSERT INTO trials
-    (nct_id, title, phase, status, sponsor, topic, last_verified, url) VALUES (?,?,?,?,?,?,?,?)`);
-  DEMO.trials.forEach((t) => insTrial.run(t.id, t.title, t.phase, t.status, t.sponsor, t.topic, t.last_verified, t.url));
+    (nct_id, title, phase, status, sponsor, topic, last_verified, url, ord, source_channel) VALUES (?,?,?,?,?,?,?,?,?,?)`);
+  DEMO.trials.forEach((t, i) => insTrial.run(t.id, t.title, t.phase, t.status, t.sponsor, t.topic, t.last_verified, t.url, i, t.sourceChannel ?? null));
+
+  /* 入组条目：ord 按数组顺序（数据来源顺序，不按可判定性排） */
+  const insCrit = db.prepare(`INSERT INTO trial_criteria
+    (trial_record_id, ord, kind, category, rule_text, decidable, fact_key, source_note) VALUES (?,?,?,?,?,?,?,?)`);
+  DEMO.trialCriteria.forEach((c, i) => insCrit.run(c.trial, i, c.kind, c.category, c.text, c.decidable, c.fact_key ?? null, c.source_note ?? null));
+
+  /* 患者事实（可用于对照的档案字段）：只存档案里**确实有出处**的，
+     没有的一律不写 —— 缺字段就是"待确认"，不拿空值冒充。 */
+  const insFact = db.prepare(`INSERT INTO patient_facts
+    (subject_id, fact_key, category, value_text, value_num, observed_on, source, evidence) VALUES (?,?,?,?,?,?,?,?)`);
+  for (const [sid, p] of Object.entries(DEMO.profiles)) {
+    const add = (k, cat, v, num, on, src, ev) => insFact.run(sid, k, cat, v, num ?? null, on ?? null, src ?? null, ev ?? 'B');
+    add('diagnosis_text', 'diagnosis', p.etiology || p.diagnosis || null, null, null, '诊断原文', 'B');
+    add('hrct_pattern', 'imaging', (p.imaging.rows[0] && p.imaging.rows[0][2]) || null, null, p.imaging.rows[0]?.[0] ?? null, '影像结论原文', 'B');
+    add('ipf_excluded', 'diagnosis', /IPF|特发性肺纤维化/i.test(p.etiology || '') ? '是（写明 IPF）' : '否（未写明 IPF）', null, null, '诊断原文', 'B');
+    add('antifibrotic_current', 'medication',
+      (p.med.rows || []).some((r) => /尼达尼布|吡非尼酮/.test(String(r[1])) && !/已停/.test(String(r[4] ?? ''))) ? '在用' : '未在用',
+      null, null, '用药记录', 'B');
+    add('pathology_available', 'pathology', (p.imaging.rows || []).length > 0 ? '有影像资料' : '无影像资料', null, null, '影像档案', 'B');
+    add('fvc_pred', 'pft', null, (() => { const f = (p.metrics || []).find((m) => m.key === 'fvc'); const ps = f?.points || []; return ps.length ? Number(ps[ps.length - 1].v) : null; })(), null, '肺功能报告', 'B');
+  }
   const insMeta = db.prepare('INSERT INTO demo_meta (k, v) VALUES (?,?)');
-  insMeta.run('disclaimer', '全部患者数据为虚构模拟，仅供原型演示；trials 表为占位，待 M4 检索填充');
+  insMeta.run('disclaimer', '全部患者数据为虚构模拟，仅供原型演示；trials 表为真实登记摘录（登记状态未核实，以登记页为准）');
+  insMeta.run('match_rule_set_version', '2026-10-25.1');
+  insMeta.run('match_footer_note', '本页只做「档案事实 ↔ 登记条目」的文字对照，不做入组资格判定，也不能替代研究者的评估。');
+  insMeta.run('match_channels_note', '已查通道：chinadrugtrials（1 条）、ctv/ClinicalTrials.gov（1 条）。未查：ChiCTR、WHO ICTRP、openFDA。未查 ≠ 无结果。');
   insMeta.run('subject_count', String(Object.keys(DEMO.profiles).length));
   insMeta.run('metric_count', String(Object.values(DEMO.profiles).reduce((a, p) => a + p.metrics.length, 0)));
   insMeta.run('point_count', String(Object.values(DEMO.profiles).reduce((a, p) => a + p.metrics.reduce((b, m) => b + m.points.length, 0), 0)));

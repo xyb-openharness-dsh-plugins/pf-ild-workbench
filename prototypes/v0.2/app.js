@@ -37,6 +37,17 @@
     ['docs', '报告与资料整理', 'folder'],
     ['nutrition', '营养与日常功能', 'leaf'],
   ];
+  /* 指标目录：分类与顺序的唯一来源（24 号 §2「类别的标题、顺序、项目归属由唯一 metricCatalog/categoryOrder 给出」）。
+     指标页与一图秀选择窗共用这一份，保证两页组名/顺序/项数一致。 */
+  const METRIC_CATALOG = [
+    { key: 'pft', name: '肺功能', codes: ['fvc', 'dlco', 'fev1', 'sixmwt'] },
+    { key: 'oxygen', name: '氧合与活动', codes: ['spo2r', 'spo2e', 'o2flow', 'mmrc'] },
+    { key: 'body', name: '身体与生活', codes: ['wt', 'kingild'] },
+    { key: 'lab', name: '常规化验', codes: ['wbc', 'hgb', 'alt', 'ast', 'crp'] },
+    { key: 'biomarker', name: '疾病标志物', codes: ['kl6'] },
+  ];
+  const CATEGORY_ORDER = METRIC_CATALOG.map((c) => c.key);
+
   const SUBPAGES = {
     pft: ['趋势图', '检查登记', '数据口径'],
     oxygen: ['快记时间线', '氧疗记录'],
@@ -65,6 +76,11 @@
 
   /* ---------------- 数据层（读 demo-data.js，不做二次加工） ---------------- */
   const D = window.DEMO_DATA;
+  /* 一图秀选中指标：按档案各记一份，**最多 4 个**（16 号 §3 sel 上限）。
+     默认给该档案 dash_keys 里前 3 个，用户可改；改完存在内存里，刷新回到默认。 */
+  const ONE_CHART_DEFAULT = 3;
+  const ONE_CHART_MAX = 4;
+
   const state = { view: 'dashboard', sub: {}, profile: 'A', large: false, sel: [], agentOpen: false };
 
   /* hash 路由：#<view>[/<sub>][?fold=1] —— 深链可分享，也供 HVT X2「路径逐字走通」走查与截图使用。 */
@@ -230,6 +246,14 @@
 
     <div class="grid four" style="margin-bottom:16px">${cards}</div>
 
+    ${(() => {
+      const sel = oneChartSelection().filter((c) => M()[c] && M()[c].points && M()[c].points.length);
+      const chart = sel.length
+        ? chartSVG(sel) + legend(sel) + `<p class="small-note">每项按自身全部记录范围缩放，不代表不同指标数值可比；单点不连线。</p>`
+        : `<div class="empty"><h3>还没有选要画入一图秀的指标</h3><p>在下面「选择要画进一图秀的指标」里勾选，最多 ${ONE_CHART_MAX} 项。</p></div>`;
+      return card('一图秀 · 病程一页纵览', chart + oneChartPicker(), '选中项只看你自己记过的记录；不做判读、不画"趋势好坏"。');
+    })()}
+
     <div class="grid two">
       ${card('接下来', `<div class="rows">
         ${p.rhythm.slice(0, 4).map((r) => `<div class="row"><div class="row-main"><b>${esc(r[0])}</b><span class="row-when">${esc(r[3])}</span></div><div class="row-desc">${esc(r[1])} · ${esc(r[2])}</div></div>`).join('')}
@@ -249,6 +273,133 @@
   }
 
   /* ---------------- 页面：肺功能趋势 ---------------- */
+  /* ---------------- 指标卡（3D 翻面，按 19 号 §指标卡翻转） ----------------
+     正面：最新已核对值 + 单位 + 日期 + 记录次数 + 来源
+     背面：该指标按真实时间轴排列的历次点（单点不连线）
+     **同一张卡只放一个可比序列**；换单位/方法不合并（本仓暂无多方法，留接口）。 */
+  const mcardFront = (m) => {
+    const nums = numPts(m);
+    const latest = m.points && m.points.length ? m.points[m.points.length - 1] : null;
+    const prev = nums.length > 1 ? nums[nums.length - 2] : null;
+    const cur = nums.length ? nums[nums.length - 1] : null;
+    /* 同组前次变化：只在两次都是数值时算；缺一侧写「缺测」，不按 0 处理（数据口径）。 */
+    let delta = '';
+    if (cur && prev) {
+      const d = cur.v - prev.v;
+      const sign = d > 0 ? '+' : '';
+      delta = `${sign}${(Math.round(d * 10) / 10)}${m.unit || ''}（较 ${esc(prev.d)}）`;
+    } else if (cur && !prev) {
+      delta = '仅 1 次记录，无法比较';
+    }
+    return `<span class="mface front">
+      <span class="mf-name"><span>${esc(m.name)}</span><span style="color:${m.color}">●</span></span>
+      <span class="mf-val">${latest ? esc(String(Number.isFinite(Number(latest.v)) ? latest.v : latest.v)) : '—'}<small>${esc(m.unit || '')}</small></span>
+      <span class="mf-meta">
+        <span>最近记录：${latest ? esc(latest.d) : '—'}${latest && latest.src ? '｜' + esc(latest.src) : ''}</span>
+        <span>已有 ${m.points ? m.points.length : 0} 次记录${delta ? '｜' + delta : ''}</span>
+      </span>
+      <span class="mf-hint">点卡片看历次记录 →</span>
+    </span>`;
+  };
+
+  const mcardBack = (m) => {
+    const nums = numPts(m);
+    const W = 300, H = 96, L = 8, R = 8, T = 8, B = 16;
+    if (m.points && m.points.length && !nums.length) {
+      /* 定性记录：只列文字值，不假装能画趋势 */
+      return `<span class="mface back"><span class="mf-name">${esc(m.name)}</span>
+        <span class="mf-empty">${esc((m.points || []).map((p) => `${p.d} ${p.v}`).join('\n'))}</span></span>`;
+    }
+    if (nums.length <= 1) {
+      return `<span class="mface back"><span class="mf-name">${esc(m.name)}</span>
+        <span class="mf-empty">只有 ${nums.length} 次记录，暂不连线<br><span style="font-size:11px">${nums.length ? esc(nums[0].d + '  ' + nums[0].v + (m.unit || '')) : ''}</span></span></span>`;
+    }
+    const ms = nums.map((p) => dateMs(p.d));
+    const t0 = Math.min(...ms), t1 = Math.max(...ms);
+    const xOf = (msv) => L + (t1 === t0 ? 0.5 : (msv - t0) / (t1 - t0)) * (W - L - R);
+    const vals = nums.map((p) => p.v);
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    const span = (hi - lo) || Math.max(Math.abs(hi) * 0.08, 1);
+    const yOf = (v) => H - B - ((v - lo) / span) * (H - T - B);
+    const pts = nums.map((p, i) => ({ x: xOf(ms[i]), y: yOf(p.v), d: p.d, v: p.v }));
+    const path = pts.length > 1 ? `<path d="${smoothPath(pts)}" fill="none" stroke="${m.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>` : '';
+    const dots = pts.map((p) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.8" fill="${m.color}"><title>${esc(p.d + '  ' + p.v + (m.unit || ''))}</title></circle>`).join('');
+    const first = pts[0], last = pts[pts.length - 1];
+    return `<span class="mface back"><span class="mf-name"><span>${esc(m.name)}</span><span style="font-size:10.5px;color:var(--ink-3);font-weight:500">${nums.length} 次</span></span>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;display:block" role="img" aria-label="${esc(m.name)} 历次记录">
+        ${path}${dots}
+        <text x="${first.x.toFixed(1)}" y="${H - 3}" font-size="9.5" fill="var(--ink-3)" text-anchor="middle">${esc(String(first.d).slice(2))}</text>
+        <text x="${last.x.toFixed(1)}" y="${H - 3}" font-size="9.5" fill="var(--ink-3)" text-anchor="middle">${esc(String(last.d).slice(2))}</text>
+      </svg>
+      <span class="mf-hint">再点返回 →</span></span>`;
+  };
+
+  const mcard = (m) => `<button class="mcard" type="button" data-mcard="${esc(m.key)}" data-flipped="false" aria-pressed="false" aria-roledescription="指标卡：可翻面" aria-label="${esc(m.name)}，${m.points ? m.points.length : 0} 次记录，点击翻看历次记录">
+      <span class="mcard-inner">${mcardFront(m)}${mcardBack(m)}</span>
+    </button>`;
+
+  /* 按类别分组渲染：类别名 + 项数 + 有记录项数；空组不消失（折叠标题仍能找到）。
+     目录顺序与项数来自 METRIC_CATALOG（唯一来源），指标页与一图秀选择窗共用。 */
+  function metricGroups(onlyCodes) {
+    const all = M();
+    const blocks = METRIC_CATALOG.map((cat) => {
+      const codes = cat.codes.filter((c) => (onlyCodes ? onlyCodes.includes(c) : true));
+      const items = codes.map((c) => all[c]).filter(Boolean);
+      if (!items.length) return '';
+      const recorded = items.filter((m) => m.points && m.points.length);
+      const head = `<div class="mgroup-head"><h3>${esc(cat.name)}</h3><span class="mgroup-count">${items.length} 项 · 有记录 ${recorded.length} 项</span></div>`;
+      /* 空组：整组无记录时折叠（避免一屏空卡），但标题仍在 */
+      if (!recorded.length) {
+        return `<div class="mgroup"><details><summary class="mgroup-head"><h3>${esc(cat.name)}</h3><span class="mgroup-count">${items.length} 项 · 尚无记录（点开补录）</span></summary><div class="metric-grid">${items.map(mcard).join('')}</div></details></div>`;
+      }
+      return `<div class="mgroup">${head}<div class="metric-grid">${items.map(mcard).join('')}</div></div>`;
+    }).filter(Boolean);
+    return blocks.join('') || `<div class="empty"><h3>还没有记录任何指标</h3><p>先导入一次检验单，或手工补录一个值。</p></div>`;
+  }
+
+  /* ---------------- 一图秀指标选择窗 ----------------
+     与指标页共用 METRIC_CATALOG（组名/顺序/项数一致，24 号 §2）。
+     上限 4 个：超了不静默丢，明确提示"最多选 4 项"。 */
+  function oneChartSelection() {
+    if (!state.oneChart) state.oneChart = {};
+    const key = state.profile;
+    if (!state.oneChart[key]) {
+      const def = (P().dash_keys || []).slice(0, ONE_CHART_DEFAULT);
+      state.oneChart[key] = def;
+    }
+    return state.oneChart[key];
+  }
+
+  function oneChartPicker() {
+    const sel = oneChartSelection();
+    const all = M();
+    const groupsHTML = METRIC_CATALOG.map((cat) => {
+      const items = cat.codes.map((c) => all[c]).filter(Boolean);
+      if (!items.length) return '';
+      const rows = items.map((m) => {
+        const on = sel.includes(m.key);
+        const nums = numPts(m);
+        const last = m.points && m.points.length ? m.points[m.points.length - 1] : null;
+        /* 没记录的指标不能选进图（选了也是空线）——明确禁用并说明原因 */
+        const disabled = !last;
+        return `<label class="pick-row${disabled ? ' is-disabled' : ''}">
+          <input type="checkbox" data-action="oc-toggle" data-code="${esc(m.key)}" ${on ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
+          <span class="pick-name"><b style="color:${m.color}">●</b> ${esc(m.name)}</span>
+          <span class="pick-val">${last ? `${esc(String(last.v))}${esc(m.unit || '')} · ${esc(last.d)}` : '还没有记录'}</span>
+          <span class="pick-n">${nums.length} 点</span>
+        </label>`;
+      }).join('');
+      return `<div class="pick-group"><div class="pick-group-head">${esc(cat.name)}</div>${rows}</div>`;
+    }).join('');
+    return `<div class="card">
+      <div class="card-head"><div><h2>选择要画进一图秀的指标</h2>
+        <p class="small-note" style="margin:4px 0 0">最多 ${ONE_CHART_MAX} 项。已选 <b id="oc-count">${sel.length}</b> 项。每项按自身范围缩放，不共用 Y 轴。</p></div>
+        <div class="actions"><button class="soft" data-action="oc-reset">恢复默认</button></div></div>
+      <div class="pick-list">${groupsHTML}</div>
+      <p class="small-note">没有记录的指标不能选（选了只会得到一条空线）。分类与指标页一致，来自同一份目录。</p>
+    </div>`;
+  }
+
   function pagePft() {
     const p = P(), s = sub('pft');
     if (s === '检查登记') {
@@ -276,6 +427,7 @@
     const codes = ['fvc', 'dlco', 'sixmwt'];
     return head('pft', '肺功能趋势', '趋势图', aiButton('pft', '帮我把 FVC%pred、DLCO%pred 和 6 分钟步行距离的变化整理成复诊时要问的问题，不要给结论。'))
       + card('趋势（FVC%pred / DLCO%pred / 6MWD）', chartSVG(codes) + legend(codes) + `<p class="small-note">每条线按该指标全部记录范围缩放，不代表不同指标数值可比；单点不连线。</p>`)
+      + `<div class="card" style="margin-top:16px"><div class="card-head"><div><h2>全部指标（按类别）</h2><p class="small-note" style="margin:4px 0 0">点卡片翻面看这项指标的历次记录；再次点击返回。分类取指标定义，不需要你自己分组。</p></div></div>${metricGroups()}</div>`
       + `<div class="grid two" style="margin-top:16px">
         ${card('相邻两次的变化（并列，不判断）', listRows(p.pft.rows.slice(0, 5), (r, i, arr) => {
           const nxt = arr[i + 1];
@@ -649,11 +801,44 @@
     }
   }
 
+  /* ---------------- 指标卡翻面 ----------------
+     卡片本身是 button，键盘 Enter/Space 天然可用；**来源点等内部可点元素不触发翻回**
+     （24 号：来源点有独立点击行为，不能触发翻回）。 */
+  function toggleMcard(cardEl) {
+    const on = cardEl.getAttribute('data-flipped') === 'true';
+    cardEl.setAttribute('data-flipped', String(!on));
+    cardEl.setAttribute('aria-pressed', String(!on));
+  }
+  document.addEventListener('click', (event) => {
+    const cardEl = event.target.closest('.mcard[data-mcard]');
+    if (cardEl) {
+      /* 内部独立交互元素（来源点/链接）不翻卡 */
+      if (event.target.closest('[data-no-flip], a, [data-action]')) return;
+      toggleMcard(cardEl);
+      return;
+    }
+  });
+
   /* ---------------- 事件委托 ---------------- */
   document.addEventListener('click', (event) => {
     const el = event.target.closest('[data-action]');
     if (!el) return;
     const action = el.dataset.action;
+    if (action === 'oc-toggle') {
+      const code = el.dataset.code;
+      const sel = oneChartSelection();
+      const i = sel.indexOf(code);
+      if (i >= 0) { sel.splice(i, 1); render(); return; }
+      if (sel.length >= ONE_CHART_MAX) {
+        /* 超上限：checkbox 的浏览器原生勾选已经发生了，必须**重渲染把状态改回去**，
+           否则界面显示已选 5 项而数据只有 4 项——提示是对的、界面是错的。 */
+        toast(`最多选 ${ONE_CHART_MAX} 项（先去勾掉一个）`);
+        render();
+        return;
+      }
+      sel.push(code); render(); return;
+    }
+    if (action === 'oc-reset') { state.oneChart[state.profile] = null; render(); return; }
     if (action === 'go') { state.view = el.dataset.view; render(); return; }
     if (action === 'sub') { state.sub[el.dataset.view] = el.dataset.sub; render(); return; }
     if (action === 'profiles') { openProfiles(); return; }

@@ -118,7 +118,9 @@ export function seedDemoData(db, { force = false } = {}) {
         });
       }
     }
-    trials.forEach((t) => insTrial.run(t.id, 'placeholder', t.title, t.phase, t.status, t.sponsor, t.topic, t.last_verified, t.url));
+    /* source 存「哪条渠道查来的」（chinadrugtrials / ctv），不是恒为 placeholder；
+       否则 readBootstrap 回读时与原型 demo-data.js 的 sourceChannel 对不上（PARITY 测试会拦）。 */
+    trials.forEach((t) => insTrial.run(t.id, t.sourceChannel ?? 'placeholder', t.title, t.phase, t.status, t.sponsor, t.topic, t.last_verified, t.url));
     db.exec('COMMIT');
   } catch (error) {
     db.exec('ROLLBACK');

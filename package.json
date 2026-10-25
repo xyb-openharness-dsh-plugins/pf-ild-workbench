@@ -23,7 +23,7 @@
     "schema"
   ],
   "scripts": {
-    "check": "node --check dsh/index.js && node --check lib/client.js && node scripts/check-workbench-package.mjs . && node scripts/check-host-contract.mjs && node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/*.test.mjs && node scripts/build-version.mjs --check && node scripts/check-wording.mjs",
+    "check": "node --check dsh/index.js && node --check lib/client.js && node scripts/check-workbench-package.mjs . && node scripts/check-host-contract.mjs && node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/*.test.mjs && node scripts/build-version.mjs --check && node scripts/check-wording.mjs && node scripts/check-static-refs.mjs && node scripts/check-choice-limit.mjs",
     "check:host": "node scripts/check-host-contract.mjs",
     "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/*.test.mjs",
     "audit": "node scripts/check-conformance.mjs .",
@@ -39,7 +39,9 @@
     "probe:resp": "node scripts/probe-responsive.mjs",
     "check:schema": "node scripts/check-schema.mjs",
     "fetch:trials": "node --disable-warning=ExperimentalWarning scripts/fetch-pf-ild-trials.mjs",
-    "build:client": "node scripts/build-client.mjs"
+    "build:client": "node scripts/build-client.mjs",
+    "check:static-refs": "node scripts/check-static-refs.mjs",
+    "check:choice-limit": "node scripts/check-choice-limit.mjs"
   },
   "dsh": {
     "bundle": {

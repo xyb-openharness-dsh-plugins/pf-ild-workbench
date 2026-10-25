@@ -246,3 +246,45 @@ dialog::backdrop{background:rgba(18,32,50,.42)}
   .card{padding:15px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+
+/* ============ 指标卡：按类别分组 + 真 3D 翻面（19 号 §指标卡翻转 / 24 号 §2） ============
+   不是"点开在下面插入一块内容"——那是折叠，不是翻转；会同时破坏布局与状态。
+   固定高度 194px、卡高恒定、每卡独立；来源点独立点击，不触发翻回。 */
+.mgroup{margin:0 0 18px}
+.mgroup-head{display:flex;align-items:baseline;gap:8px;margin:0 0 8px;padding:0 2px}
+.mgroup-head h3{margin:0;font-size:13.5px;font-weight:700;color:var(--ink)}
+.mgroup-count{font-size:11.5px;color:var(--ink-3)}
+.metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.metric-grid{grid-template-columns:minmax(0,1fr)}}
+
+.mcard{perspective:1100px;-webkit-perspective:1100px;display:block;width:100%;height:194px;padding:0;border:0;background:none;text-align:left;border-radius:14px;cursor:pointer;font:inherit;color:inherit}
+.mcard:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+.mcard-inner{position:relative;display:block;height:100%;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform 620ms cubic-bezier(.2,.72,.2,1);will-change:transform}
+.mcard[data-flipped="true"] .mcard-inner,.mcard[aria-pressed="true"] .mcard-inner{transform:rotateY(180deg)}
+.mface{position:absolute;inset:0;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
+.mface.back{transform:rotateY(180deg);background:var(--surface-2,#f9fbfd)}
+.mcard:hover .mface{border-color:var(--line-strong,#ddd0f0);box-shadow:0 6px 18px rgba(27,79,138,.08)}
+.mf-name{font-size:12.5px;font-weight:700;color:var(--ink-2);display:flex;justify-content:space-between;gap:6px;align-items:baseline}
+.mf-val{font-size:26px;font-weight:750;line-height:1.1;letter-spacing:-.01em;color:var(--ink)}
+.mf-val small{font-size:12px;font-weight:600;color:var(--ink-3);margin-left:3px}
+.mf-meta{font-size:11.5px;color:var(--ink-3);display:flex;flex-direction:column;gap:2px;margin-top:auto}
+.mf-hint{font-size:11px;color:var(--brand);font-weight:650;margin-top:2px}
+.mf-empty{font-size:12px;color:var(--ink-3);display:flex;align-items:center;justify-content:center;height:100%;text-align:center;line-height:1.6}
+
+/* reduced-motion：瞬时切换，不做 620ms 翻转（但仍要能切） */
+@media (prefers-reduced-motion:reduce){
+  .mcard-inner{transition-duration:.01ms !important}
+}
+
+/* ============ 一图秀指标选择窗（16 号 §3 sel 上限 4；目录与指标页共用） ============ */
+.pick-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;margin:4px 0 8px}
+@media (max-width:700px){.pick-list{grid-template-columns:minmax(0,1fr)}}
+.pick-group{margin:0}
+.pick-group-head{font-size:11.5px;font-weight:700;color:var(--ink-3);letter-spacing:.02em;margin:6px 0 4px;padding-bottom:3px;border-bottom:1px solid var(--line)}
+.pick-row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:8px;padding:5px 6px;border-radius:8px;cursor:pointer;font-size:12.5px}
+.pick-row:hover{background:var(--surface-2,#f6f8fb)}
+.pick-row.is-disabled{opacity:.55;cursor:not-allowed}
+.pick-row input{width:15px;height:15px;accent-color:var(--brand);cursor:inherit}
+.pick-name{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-val{font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.pick-n{font-size:11px;color:var(--ink-3);white-space:nowrap;min-width:38px;text-align:right}

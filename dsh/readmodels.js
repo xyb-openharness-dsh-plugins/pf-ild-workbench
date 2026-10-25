@@ -118,9 +118,11 @@ export function readBootstrap(db) {
   const subjects = listSubjects(db);
   const profiles = {};
   for (const s of subjects) profiles[s.subject_id] = readProfile(db, s.subject_id);
-  const trials = db.prepare(`SELECT nct_id, title, phase, status, sponsor, topic, last_verified, url
+  /* sourceChannel 是原型的字段名，库里叫 source（NOT NULL DEFAULT 'placeholder'）；
+     改名不改语义：这条试验是哪个登记渠道查来的，决定页面上"去哪儿核对"的提示。 */
+  const trials = db.prepare(`SELECT nct_id, title, phase, status, sponsor, topic, last_verified, url, source
     FROM trials ORDER BY rowid`).all()
-    .map((t) => ({ id: t.nct_id, title: t.title, phase: t.phase, status: t.status, sponsor: t.sponsor, topic: t.topic, last_verified: t.last_verified, url: t.url }));
+    .map((t) => ({ id: t.nct_id, title: t.title, phase: t.phase, status: t.status, sponsor: t.sponsor, topic: t.topic, last_verified: t.last_verified, url: t.url, sourceChannel: t.source }));
   return { profiles, trials };
 }
 
