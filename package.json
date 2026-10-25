@@ -31,9 +31,10 @@
     "probe:page-view": "node scripts/probe-page-view.mjs",
     "check:paths": "node scripts/check-interaction-paths.mjs",
     "build:demo": "node --disable-warning=ExperimentalWarning demo/build-demo-data.mjs",
-    "check:all": "npm run check && npm run check:paths && npm run check:wording",
+    "check:all": "npm run check && npm run check:paths && npm run check:wording && npm run check:schema",
     "check:wording": "node scripts/check-wording.mjs",
-    "probe:resp": "node scripts/probe-responsive.mjs"
+    "probe:resp": "node scripts/probe-responsive.mjs",
+    "check:schema": "node scripts/check-schema.mjs"
   },
   "dsh": {
     "bundle": {
