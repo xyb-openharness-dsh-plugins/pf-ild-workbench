@@ -28,7 +28,10 @@
     "pack:check": "npm pack --dry-run",
     "probe:artifact": "node scripts/serve-artifact.mjs",
     "probe:tabs": "python3 scripts/verify-tabs-on-artifact.py",
-    "probe:page-view": "node scripts/probe-page-view.mjs"
+    "probe:page-view": "node scripts/probe-page-view.mjs",
+    "check:paths": "node scripts/check-interaction-paths.mjs",
+    "build:demo": "node --disable-warning=ExperimentalWarning demo/build-demo-data.mjs",
+    "check:all": "npm run check && npm run check:paths"
   },
   "dsh": {
     "bundle": {

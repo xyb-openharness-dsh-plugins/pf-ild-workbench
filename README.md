@@ -1,44 +1,90 @@
-# 小呼宝 BreathPal 肺纤维化工作台
+# 小呼宝 BreathPal · PF-ILD 工作台
 
-本机优先的进行性纤维化性间质性肺疾病（PF-ILD）肺功能趋势、氧状态、急性加重事件与复诊准备工作台
+> 面向**进行性纤维化性间质性肺疾病（PF-ILD / PPF）**患者与照护者的本机优先工作台。
+> 一句话定位：**把散在报告里的肺功能、氧状态、用药与住院事件整理成一条能看懂、能带去复诊的时间线。**
+>
+> **不做声明**：本工作台**不做诊断、不做治疗建议、不给移植资格结论、不做热量换算**。PF-ILD/PPF 进展判定、急性加重诊断、移植适应证评估**均为医生任务**，这里只记录事实、并列展示原文、帮你准备要问的问题。
 
-这是接入骨架，尚未实现真实业务。初始化后先将 [项目设计提示词](docs/DESIGN-PROMPT.md) 交给当前Agent；它应展示实际路径并以已有用户/场景/流程素材对齐设计者、研究与取舍原则。癌种项目另有 [完整专用提示词](prompts/NEW-CANCER-WORKBENCH.md)。需求见 [BRIEF](docs/BRIEF.md)，规格见 [SPEC](docs/SPEC.md)，任务见 [TASKS](docs/TASKS.md)；先读 [AGENTS](AGENTS.md)。CLI输出交接与首问，实际对话由Agent接续。
+病种口径：罕见病目录 **#69**（《86 个罕见病病种诊疗指南（2025 年版）》，印刷页 408–411）· 线别 **R2 非肿瘤慢性病型** · 级别 **T1 优先**。
+关键医学口径（官方指南原句）：**「PPF 不是独立的疾病诊断，更多代表疾病行为」**——所以本仓不设病因/分型选择器，只照录医生给出的诊断原文。
 
-## 开发顺序
+## 关键功能
 
-先共创SPEC和候选数据关系，再交付HTML交互工作台；由用户确认对应版本/模块后，复核SCHEMA/API并实现生产功能。确认记录见docs/PROTOTYPE-REVIEW.md；模型不依赖前端Tab/流程。模板骨架不是业务已确认。
+### 看板：一眼看到「现在什么情况」和「接下来要做什么」
 
-## 当前能力
+![看板](docs/screenshots/readme-dashboard-0.1.0.png)
 
-- 一个 DSH 工作台注册、认证的健康接口、版本展示与标准/大字切换。
-- 已明确选择布局：business-first。business-first 使用 customFrame；模板不创建会话或复制聊天。需要 AI 协助时按官方合同接入原生 conversation 和会话管理。
-- 无业务数据库、无演示患者、无真实密钥；所有业务页按确认 spec 逐项实现。
+把 FVC%pred、DLCO%pred、活动后血氧、体重四张卡放在最上面，**只并列展示、不判断好坏**；右侧把「接下来」的复诊节奏和「还没准备的项」摊开——回答的是同一句话：*「我下次去门诊，到底该带什么、该说什么？」*
 
-## 开发与本地验收
+### 肺功能趋势：回答「这半年是掉还是稳」
 
-需要 Node.js 22+、Git、包管理器和可用 DSH Desktop；采用 SQLite 时另核验 node:sqlite 版本条件。宿主 peers 的范围仅是模板基线，请与目标 Desktop 实际依赖核对。
+![肺功能趋势](docs/screenshots/readme-pft-trend-0.1.0.png)
+
+FVC%pred、DLCO%pred 与 6 分钟步行距离**各按自身全部记录范围缩放**（图上写明"不代表不同指标数值可比"），单点不连线；相邻差值只在两次都是数值时给，缺一侧显示「缺测，无法计算」，**不插补、不给"恶化/好转"结论**。曲线用 Fritsch–Carlson 单调插值，保证不过冲——医疗信息上的视觉过冲等于误导。
+
+### 急性加重事件：住院一次，前后怎么连
+
+![折叠卡收起态](docs/screenshots/readme-foldout-collapsed-0.1.0.png)
+
+![折叠卡展开态](docs/screenshots/readme-foldout-expanded-0.1.0.png)
+
+事件卡记录住院区间、起因原文、出院带药与氧疗处方、复查节点；**诊断判定留给医生**（卡上写明"具体判定以病历为准"）。治疗与事件路径用**折叠卡**承载：默认收起只显示「阶段 + 日期 + 一句话」，点开是固定五块（方案 / 指标和趋势 / 影像发现 / 副作用总结 / 支持与效果）；打印时自动全部展开。
+
+### 移植评估信息自检：只列「要问什么」，不给「够不够格」
+
+![移植评估信息自检](docs/screenshots/readme-transplant-checklist-0.1.0.png)
+
+这是本仓与肿瘤工作台差别最大的一页：PF-ILD 的移植评估是**不可逆的时间窗口**，但"适不适合移植"必须由移植团队判断。所以这里只做**完整度清单**——哪份报告有、哪份没有、还有哪些事没了解（例如"移植中心挂号要带什么"），把不知道的变成复诊时能问出口的问题。
+
+### 营养与日常功能：气促吃不下、体重在掉
+
+![营养与日常功能](docs/screenshots/readme-nutrition-0.1.0.png)
+
+记录进食量与症状自述，**不做热量换算、不做肌少症判定**（红线）。进食量是粗档分类（少/中/多），只做记录不进趋势折线。
+
+### 窄宽与 AI 面板
+
+![窄宽 760](docs/screenshots/readme-narrow-760-0.1.0.png)
+
+![AI 草稿预览](docs/screenshots/readme-agent-draft-0.1.0.png)
+
+业务区在 AI 面板打开后会变窄，因此布局按**业务区自身宽度**做三档自适应（≤1180 / ≤900 / ≤600）。「与 AI 一起整理」会把**你已记录的内容**整理成一段草稿，**逐块列出带入了什么、没带入什么**（心理/情绪私密记录默认不带），草稿只填入右侧原生会话输入框——**不会自动发送**。
+
+## 怎么用
+
+**尚未装机发布（M2 原型阶段）。** 当前可用方式：
 
 ```bash
-npm install
-npm run check
-npm run pack:check
-npm pack
+# 1) 生成演示数据（唯一来源：改数据只改生成器）
+node demo/build-demo-data.mjs
+
+# 2) 用浏览器打开原型（无需构建）
+open prototypes/v0.2/index.html
+#    支持深链：#pft/趋势图 · #ae/事件卡?fold=1 · #visit/问题清单?draft=1 · #dashboard?agent=1
 ```
 
-`npm run check` 只保证"能装"（语法 + 装包合同），第一天就该是绿的。`npm run audit` 管"还是不是家族里的一员"：版本三处一致、`lib/layout.js` 面板参数单一来源、检查链完整、文档与密钥卫生，**只看代码与文件，不看文档自述**。新项目刚生成时 audit 必然有 fail，那是待办清单；交付/发布前必须清零，存在 fail 不得发布（`npm run release:check` 一次跑完两者）。
+装机入口（M6 完成后）：DSH Desktop 本地 tgz 安装 → **重启后先新建会话**（宿主按会话授权）。
 
-跑的时间点：**每次改完**跑 `check`；**G2 原型确认后、写业务代码前**先跑一次 `audit`（这时缺的多是 `lib/layout.js`、`VERSION` 这类结构，越早补越便宜）；**交付/装机前**必须跑 `release:check`；**发布或投稿前**把 `npm run audit --json` 的 `xx/xx 通过 · N 失败 · M 待人工` 抄进 `docs/RELEASE.md` 的「家族一致性」一行。`✗` 是结构缺口（补齐，或在 `docs/DEV-REQUIREMENTS-<日期>.md` 写明偏离理由并由用户确认），`!` 是需人工判断的项（逐条给「已人工确认 / 确实没有」）。
+## 数据与口径
 
-`npm install` 可能按 npm 策略解析 peer；勿为消警告重复打包宿主 runtime。客户端本身是单文件；引入 TS/组件库后需添加构建步骤并保留单文件导出。
+- **本机优先**：数据落 SQLite，`config.root` 指向本机资料目录；演示数据全部为虚构模拟。
+- **临床试验**：占位待 M4 用 unified-trial-mcp 在线四通道检索填充；**离线语料目前只有胰腺癌**，对本病种无覆盖，如实记为「未查过」。
+- **用户研究**：**0 访谈**，全部为公开二手材料；文档里所有"患者原话"位均标注「改写句，非一手引语」。
+- **医学核对**：🩺 未做；NMPA 官方级药品适应症核对**未完成**（检索通道受限），已在 `research/RESEARCH-MEDICAL-2026-10-25.md` 标「未核实」。
+- 版本：`v0.1.0`（原型 v0.1.0，2026-10-25）。
 
-本地安装入口以当前 Desktop/CLI 帮助为准。安装后按 [docs/06-VALIDATION-AND-RELEASE.md](docs/06-VALIDATION-AND-RELEASE.md) 与官方自测完成真实 UI 验收，并填写 [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)。静态检查不代表已加载。
+## 开发
 
-Logo 来源与使用限制见 assets/README.md。许可证、作者、仓库/发布策略由本项目维护者确认后填写；模板默认为 private/UNLICENSED。
+```bash
+npm run check      # 包合同静态检查（第一天就该绿）
+npm run test       # 单测
+npm run audit      # 家族一致性（交付前 0 fail）
+npm run release:check
+```
 
-感谢小x宝社区、DataElement 社区，以及 sam / hhx / 繁华的 ❤️ 贡献。
-
-初始化来源记录见 `.dsh-wb-starter.json`。更新社区脚手架不会覆盖本项目；需要升级时先用相同确认配置在临时目录生成，再审阅差异。CLI 用法见 [docs/CLI-GIT.md](docs/CLI-GIT.md)。
-
-## HTML先行与数据演进
-
-业务开发前先交付HTML交互工作台原型、实际预览并由用户确认版本/hash和范围。数据设计先区分领域事实、流程状态和页面读模型，走查前端/流程变化、兼容与迁移；原型对象不直接作为表。见[规范](docs/14-HTML-AND-DATA-CONTRACT.md)。
+文档索引：
+- 规格与范围：`docs/SPEC.md`｜开发计划：`docs/DEV-PLAN.md`（里程碑唯一来源）
+- 差异化与重名率实测：`docs/DIFF-MATRIX.md`｜交互路径（28 号 IP1）：`docs/INTERACTION-DESIGN.md`
+- 数据模型：`docs/SCHEMA.md`｜分级口径：`docs/METRIC-GRADING.md`
+- 调研：`research/{FAMILY-COMPARISON,USER-RESEARCH,RESEARCH-MEDICAL}-2026-10-25.md`
+- 硬约束与来源：`docs/DEV-REQUIREMENTS-2026-10-25.md`｜HVT 审核：`docs/HVT-REVIEW.md`（B=0）
