@@ -1,6 +1,6 @@
 # CLINICAL-DATA · 小呼宝 BreathPal（pf-ild-workbench）· 2026
 
-> 数据截止日：**2026-10-25（未核）**。本文只写**口径**与**已知缺口**，实际检索结果由 M4 `scripts/fetch-pf-ild-trials.mjs` 四件套回填。
+> 数据截止日：**2026-10-25**（检索运行时间，见 `data/trials/pf-ild/manifest.json` 的 `generatedAt`；离线来源的 `dataCutoff` 另行标注）。
 
 ## 一、口径
 
@@ -9,7 +9,28 @@
 - 来源终态：每条 trial 记 source、source_id、status、pubdate、summary_zh、last_checked_at。
 - 刷新策略：在线通道每次运行时实时；离线语料 sha256 必须与 corpora/manifest.json 一致。
 
-## 二、通道覆盖（M4 必填）
+## 一·五、实际检索结果（2026-10-25 实跑，`scripts/fetch-pf-ild-trials.mjs`）
+
+四件套：`data/trials/pf-ild/{manifest.json,trials.jsonl,trials.sqlite}` + 本文。**三处条数一致：manifest.records = jsonl 行数 = sqlite 行数 = 1**。
+
+| 来源 | 终态 | 是否算「查过」 | 说明 |
+| --- | --- | --- | --- |
+| `chinadrugtrials`（CDE 受控归档） | `NO_RESULTS` / `SUCCESS` | **是** | 6 组关键词逐条查询；命中 1 条 |
+| `ictrp`（WHO ICTRP） | `FAILED` | **否** | 上游入口 doctor 显示可用，但实际调用失败——**如实记「未查过」**，不得解读为"不存在" |
+| `ctv`（Veeva CTV） | `NEEDS_SETUP` | 否 | 未配置上游服务目录或本地索引 |
+| `chictr_online` | `NOT_ENABLED` | 否 | 未配置 ChiCTR 在线服务目录 |
+| `chictr_pancreatic_archive` | `NEEDS_SETUP` | 否 | 离线语料，且**只有胰腺癌**（对本病种无覆盖） |
+| `xyb_chinadrugtrials_archive` | `NEEDS_SETUP` | 否 | 同上 |
+
+**实际取到的记录（1 条）**：
+
+| recordId | 标题 | 适应症 | 分期 | 状态 |
+| --- | --- | --- | --- | --- |
+| `chinadrugtrials:CTR20213153` | BMS-986278 治疗肺纤维化的疗效与安全性的 2 期研究 | 肺纤维化 | 2 期 | 进行中 招募完成 |
+
+> **纪律声明**：本次只有 1 个来源算「查过」，命中 1 条；**其余 5 个来源均属「未查过」，其缺失绝不等于"没有相关试验"**。登记状态未核实，以登记页为准；本表不构成招募推荐。
+
+## 二、通道覆盖
 
 | 通道 | 适用性 | 说明 |
 | --- | --- | --- |

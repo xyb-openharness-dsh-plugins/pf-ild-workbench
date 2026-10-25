@@ -34,7 +34,8 @@
     "check:all": "npm run check && npm run check:paths && npm run check:wording && npm run check:schema",
     "check:wording": "node scripts/check-wording.mjs",
     "probe:resp": "node scripts/probe-responsive.mjs",
-    "check:schema": "node scripts/check-schema.mjs"
+    "check:schema": "node scripts/check-schema.mjs",
+    "fetch:trials": "node --disable-warning=ExperimentalWarning scripts/fetch-pf-ild-trials.mjs"
   },
   "dsh": {
     "bundle": {

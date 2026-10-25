@@ -1,0 +1,220 @@
+{
+  "disease": "PF-ILD",
+  "diseaseCn": "进行性纤维化性间质性肺疾病",
+  "generatedAt": "2026-10-25T03:06:55.708Z",
+  "mcpService": "unified-trial-search-mcp-service",
+  "mcpDir": "~/Downloads/unified_search_trials",
+  "queries": [
+    {
+      "query": "疾病名（英文）",
+      "returned": 0,
+      "coverage": {
+        "queried": [
+          "chinadrugtrials"
+        ],
+        "unavailable": [
+          "xyb_chinadrugtrials_archive",
+          "chictr_online",
+          "chictr_pancreatic_archive",
+          "ctv",
+          "ictrp"
+        ],
+        "notQueried": []
+      },
+      "completeness": {
+        "isComplete": false,
+        "warnings": [
+          "chinadrugtrials: ChinaDrugTrials 结果表格为空；已确认检索执行，但未命中任何记录。"
+        ]
+      },
+      "truncation": null
+    },
+    {
+      "query": "疾病名（同义）",
+      "returned": 0,
+      "coverage": {
+        "queried": [
+          "chinadrugtrials"
+        ],
+        "unavailable": [
+          "xyb_chinadrugtrials_archive",
+          "chictr_online",
+          "chictr_pancreatic_archive",
+          "ctv",
+          "ictrp"
+        ],
+        "notQueried": []
+      },
+      "completeness": {
+        "isComplete": false,
+        "warnings": [
+          "chinadrugtrials: ChinaDrugTrials 结果表格为空；已确认检索执行，但未命中任何记录。"
+        ]
+      },
+      "truncation": null
+    },
+    {
+      "query": "疾病族",
+      "returned": 1,
+      "coverage": {
+        "queried": [
+          "chinadrugtrials"
+        ],
+        "unavailable": [
+          "xyb_chinadrugtrials_archive",
+          "chictr_online",
+          "chictr_pancreatic_archive",
+          "ctv",
+          "ictrp"
+        ],
+        "notQueried": []
+      },
+      "completeness": {
+        "isComplete": false,
+        "warnings": []
+      },
+      "truncation": null
+    },
+    {
+      "query": "抗纤维化用药",
+      "returned": 0,
+      "coverage": {
+        "queried": [
+          "chinadrugtrials"
+        ],
+        "unavailable": [
+          "xyb_chinadrugtrials_archive",
+          "chictr_online",
+          "chictr_pancreatic_archive",
+          "ctv",
+          "ictrp"
+        ],
+        "notQueried": []
+      },
+      "completeness": {
+        "isComplete": false,
+        "warnings": [
+          "chinadrugtrials: ChinaDrugTrials 结果表格为空；已确认检索执行，但未命中任何记录。"
+        ]
+      },
+      "truncation": null
+    },
+    {
+      "query": "肺移植",
+      "returned": 0,
+      "coverage": {
+        "queried": [
+          "chinadrugtrials"
+        ],
+        "unavailable": [
+          "xyb_chinadrugtrials_archive",
+          "chictr_online",
+          "chictr_pancreatic_archive",
+          "ctv",
+          "ictrp"
+        ],
+        "notQueried": []
+      },
+      "completeness": {
+        "isComplete": false,
+        "warnings": [
+          "chinadrugtrials: ChinaDrugTrials 结果表格为空；已确认检索执行，但未命中任何记录。"
+        ]
+      },
+      "truncation": null
+    },
+    {
+      "query": "肺康复",
+      "returned": 0,
+      "coverage": {
+        "queried": [
+          "chinadrugtrials"
+        ],
+        "unavailable": [
+          "xyb_chinadrugtrials_archive",
+          "chictr_online",
+          "chictr_pancreatic_archive",
+          "ctv",
+          "ictrp"
+        ],
+        "notQueried": []
+      },
+      "completeness": {
+        "isComplete": false,
+        "warnings": [
+          "chinadrugtrials: ChinaDrugTrials 结果表格为空；已确认检索执行，但未命中任何记录。"
+        ]
+      },
+      "truncation": null
+    }
+  ],
+  "sourceTerminalStates": [
+    {
+      "source": "chinadrugtrials",
+      "states": [
+        "NO_RESULTS",
+        "SUCCESS"
+      ],
+      "queried": true,
+      "terminal": "queried",
+      "dataCutoff": null,
+      "notes": []
+    },
+    {
+      "source": "xyb_chinadrugtrials_archive",
+      "states": [
+        "NEEDS_SETUP"
+      ],
+      "queried": false,
+      "terminal": "not-queried",
+      "dataCutoff": null,
+      "notes": []
+    },
+    {
+      "source": "chictr_online",
+      "states": [
+        "NOT_ENABLED"
+      ],
+      "queried": false,
+      "terminal": "not-queried",
+      "dataCutoff": null,
+      "notes": []
+    },
+    {
+      "source": "chictr_pancreatic_archive",
+      "states": [
+        "NEEDS_SETUP"
+      ],
+      "queried": false,
+      "terminal": "not-queried",
+      "dataCutoff": null,
+      "notes": []
+    },
+    {
+      "source": "ctv",
+      "states": [
+        "NEEDS_SETUP"
+      ],
+      "queried": false,
+      "terminal": "not-queried",
+      "dataCutoff": null,
+      "notes": []
+    },
+    {
+      "source": "ictrp",
+      "states": [
+        "FAILED"
+      ],
+      "queried": false,
+      "terminal": "not-queried",
+      "dataCutoff": null,
+      "notes": []
+    }
+  ],
+  "counts": {
+    "records": 1,
+    "dedupedFrom": 1
+  },
+  "discipline": "只有 SUCCESS/NO_RESULTS 的来源算「查过」；其余状态一律记「未查过」，不得解读为「不存在」。离线语料目前只有胰腺癌，对本病种记「无覆盖」。",
+  "disclaimer": "登记状态未核实，以登记页为准；本文件不构成招募推荐。"
+}
