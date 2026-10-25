@@ -297,3 +297,16 @@ dialog::backdrop{background:rgba(18,32,50,.42)}
 .trial-counts{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed var(--line)}
 .trial-counts .note{font-size:11.5px;color:var(--muted)}
 .trial-item .check-list{margin:0}
+
+/* ---------------- 临床试验 · 三档对照（口径照 PBC 仓 demo） ---------------- */
+.tier-block{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;background:#fff}
+.tier-block:last-child{margin-bottom:0}
+.tier-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.tier-head b{font-size:14px;line-height:1.5}
+.tier-rows{margin:0}
+.tier-rows li{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px dashed var(--line)}
+.tier-rows li:first-child{border-top:0}
+.tier{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:6px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.tier.ok{background:#e8f2ee;color:#215d54}
+.tier.bad{background:var(--warn-bg);color:#8a5a0c}
+.tier.q{background:#edf1f6;color:#68788c}

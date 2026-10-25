@@ -9,7 +9,7 @@
  *   - 私密内容（viewpoints.privacy='private'）在**数据层**过滤，不靠前端不画。
  */
 import { tableNames } from './store.js';
-import { buildMatchModel } from '../lib/trial-match.js';
+import { buildMatchModel, searchLeads } from '../lib/trial-match.js';
 
 const asArray = (text, fallback = []) => {
   if (text === null || text === undefined || text === '') return fallback;
@@ -159,7 +159,7 @@ export function readTrialMatch(db, subjectId) {
       source: f.source, evidence: f.evidence, category: f.category,
     };
   }
-  return buildMatchModel({
+  const model = buildMatchModel({
     trials,
     criteria,
     facts,
@@ -168,6 +168,8 @@ export function readTrialMatch(db, subjectId) {
     footerNote: meta('match_footer_note'),
     channelsNote: meta('match_channels_note'),
   });
+  model.leads = searchLeads(trials, facts);
+  return model;
 }
 
 /** 供检查器：读模型用到的表必须都存在（防 0002 漏跑） */

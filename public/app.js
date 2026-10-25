@@ -675,65 +675,97 @@
   function trialHTML() {
     const p = P(), sid = state.profile;
     const m = (D.trialMatch && D.trialMatch[sid]) || null;
-    const evidence = (lv) => lv === 'A' ? '<span class="pill green">A 级</span>' : lv === 'B' ? '<span class="pill">B 级</span>' : '<span class="pill grey">未核实</span>';
+    const leads = m && m.leads ? m.leads : null;
+    const TIER = { satisfied: ['符合', 'ok', '✓'], conflict: ['冲突', 'bad', '!'], undetermined: ['待确认', 'q', '?'] };
 
-    /* ---- ① 基础病理建档 ---- */
-    const pathRows = [
-      ['诊断原文', p.etiology || '—', '来自病历；未改写、未归纳'],
-      ['HRCT 影像结论', (p.imaging?.rows?.[0] && p.imaging.rows[0][2]) || '—', p.imaging?.rows?.[0]?.[0] || ''],
-      ['病理资料（肺活检）', (p.imaging?.rows || []).length ? '有影像资料可复核' : '暂无', '登记页常要求"可供复核"'],
-      ['遗传 / 家族史', '未建结构化字段', '部分研究要求端粒酶等相关基因信息'],
+    /* ---- ① 匹配建档：只有这里列出的字段参与对照，来源逐项写清 ---- */
+    const facts = m && m.facts ? m.facts : {};
+    const factRows = [
+      ['诊断原文', facts.diagnosis_text?.value_text, facts.diagnosis_text?.source],
+      ['HRCT 结论', facts.hrct_pattern?.value_text, facts.hrct_pattern?.source],
+      ['病理资料', facts.pathology_available?.value_text, facts.pathology_available?.source],
+      ['是否写明 IPF', facts.ipf_excluded?.value_text, facts.ipf_excluded?.source],
+      ['抗纤维化用药', facts.antifibrotic_current?.value_text, facts.antifibrotic_current?.source],
+      ['FVC %pred', facts.fvc_pred?.value_text, facts.fvc_pred?.source],
     ];
-    const pathCard = card('① 基础病理建档（本页只整理，不下诊断）',
-      `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>项目</th><th>本档案记录</th><th>说明</th></tr></thead><tbody>${
-        pathRows.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td class="note">${esc(r[2])}</td></tr>`).join('')
+    const missing = [
+      ['遗传 / 基因检测', '本仓未建立结构化基因字段'],
+      ['肺活检病理报告原文', '本档案只有影像，没有肺穿记录'],
+      ['入排标准原文', '本登记只采到标题/登记号/状态，未抓纳入排除原文'],
+      ['体力状态评分（ECOG/6MWD 分级）', '本仓未建该字段'],
+    ];
+    const dossierCard = card('① 匹配建档（只有这里列出的字段参与对照）',
+      `<p class="muted">能用来匹配的只有档案里<b>确实有出处</b>的字段；没建的一律不参与，也不猜。</p>
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>字段</th><th>本档案记录</th><th>来源</th></tr></thead><tbody>${
+        factRows.map(([k, v, src]) => `<tr><td>${esc(k)}</td><td>${v ? esc(v) : '<span class="muted">本机无记录</span>'}</td><td class="note">${esc(src || '—')}</td></tr>`).join('')
       }</tbody></table></div>
-      <div class="notice grey" style="margin-top:12px">缺失的项不是"不符合"，是"本地还没有记为结构化字段"。补齐后下方对照会自动从「待确认」变成有结论的档位。</div>`,
-      '来源：SPEC §四 F-DX-01；医学口径见 research/RESEARCH-MEDICAL-2026-10-25.md（病理/基因在外周型 ILD 的意义）。');
+      <h3 style="margin:18px 0 8px;font-size:13px">本地没建档的（这些永远「无法自动匹配」）</h3>
+      <ul class="list">${missing.map(([k, why]) => `<li><span><b>${esc(k)}</b><br><span class="muted">${esc(why)}</span></span></li>`).join('')}</ul>
+      <p class="muted" style="margin-top:8px">缺字段一律判「待确认」，<b>不判「不符合」</b>——工作台不替你下结论。</p>`,
+      '来源：SPEC §四 F-DX-01；医学口径见 research/RESEARCH-MEDICAL-2026-10-25.md。');
 
-    /* ---- ② 检索要素与结果 ---- */
-    const searchCard = card('② 检索要素与结果（如实记未查通道）',
-      `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>检索式</th><th>命中</th><th>已查通道</th><th>未查通道</th></tr></thead><tbody>
-        <tr><td>疾病名（英文）</td><td>0</td><td>chinadrugtrials</td><td class="note">ChiCTR / ICTRP / ctv / 归档 共 5</td></tr>
-        <tr><td>疾病名（同义）</td><td>0</td><td>chinadrugtrials</td><td class="note">同上</td></tr>
-        <tr><td>疾病族</td><td><b>1</b></td><td>chinadrugtrials</td><td class="note">同上</td></tr>
-        <tr><td>抗纤维化用药</td><td>0</td><td>chinadrugtrials</td><td class="note">同上</td></tr>
-        <tr><td>肺移植</td><td>0</td><td>chinadrugtrials</td><td class="note">同上</td></tr>
-        <tr><td>肺康复</td><td>0</td><td>chinadrugtrials</td><td class="note">同上</td></tr>
-      </tbody></table></div>
-      <div class="notice warn" style="margin-top:12px"><b>未查 ≠ 无结果。</b>6 条检索式里只有 1 条命中；其余 5 个通道本轮未查，不能据此说"这个病没有临床试验"。</div>`,
-      '来源：data/trials/pf-ild/manifest.json（unified-trial MCP 四通道，2026-10-25）。');
+    /* ---- ② 检索要素与结果：分层，逐条给证据 ---- */
+    const leadRow = (t) => {
+      const ev = t.structured.length
+        ? t.structured.map((h) => `${h.field}=${h.value}（来源：${h.source || '未记'}）`).join('；')
+        : (t.text.length ? t.text.map((h) => h.term).join('、') : t.broad.map((h) => h.term).join('、'));
+      return `<li><span><b>${esc(t.title)}</b><br>
+        <span class="muted">${esc(t.recordId)} · ${esc(t.status || '状态未标')} · ${esc(t.snapshotNote)}</span><br>
+        <span class="muted">命中证据：${esc(ev)}</span></span></li>`;
+    };
+    const searchCard = leads ? card('② 检索要素与结果（分层给证据，不是一张命中数表）',
+      `<div class="row" style="margin-bottom:10px">
+        ${[['结构化命中', leads.counts.structured, '建档实体出现在标题里'],
+           ['文本命中', leads.counts.text, '题材词重合，逐词给证据'],
+           ['宽口径命中', leads.counts.broad, '只沾大词，排最后'],
+           ['本地快照', leads.trialCount, '不是"全部相关试验"']]
+          .map(([k, v, h]) => `<div class="kv"><span class="k">${esc(k)}</span><span class="v">${v}</span><span class="muted" style="font-size:11px">${esc(h)}</span></div>`).join('')}
+      </div>
+      ${leads.flagged.length ? `<div class="notice warn" style="margin-bottom:12px"><b>⚠ 对象不是你这类人的登记</b>：${esc(leads.flaggedNote)}</div>` : ''}
+      ${leads.layers.map((L) => `<h3 style="margin:14px 0 6px;font-size:13px">${esc(L.title)} <span class="muted">${esc(L.hint)} · ${L.rows.length} 条</span></h3>
+        ${L.rows.length ? `<ul class="list">${L.rows.slice(0, 12).map(leadRow).join('')}</ul>`
+          : '<p class="muted">这一层没有结果。</p>'}`).join('')}
+      <div class="notice warn" style="margin-top:12px"><b>未查 ≠ 无结果。</b>6 条检索式里只有 1 条命中；ChiCTR / WHO ICTRP / ClinicalTrials.gov / openFDA 本轮未查，不能据此说"这个病没有临床试验"。</div>`,
+      '来源：data/trials/pf-ild/manifest.json（unified-trial MCP 四通道，2026-10-25）。')
+      : card('② 检索要素与结果', '<p class="muted">本地快照还没有加载。</p>');
 
-    /* ---- ③ 匹配与分析 ---- */
+    /* ---- ③ 入排条款对照：三档 + 逐条 why ---- */
     let matchBody;
     if (!m || !m.entries.length) {
-      matchBody = '<div class="notice grey">本地还没有登记条目，无法做对照。这不表示"没有试验"，只表示"本页还没收录条目"。</div>';
+      matchBody = '<p class="muted">本地还没有登记条目，无法做对照。这不表示"没有试验"，只表示"本页还没收录条目"。</p>';
     } else {
       matchBody = m.entries.map((e) => {
-        const rules = e.rules.map((r) => {
-          const tone = r.tier === 'satisfied' ? 'yes' : r.tier === 'conflict' ? 'no' : 'grey';
-          const mark = r.tier === 'satisfied' ? '✓' : r.tier === 'conflict' ? '!' : '?';
-          const label = r.tier === 'satisfied' ? '符合' : r.tier === 'conflict' ? '冲突' : '待确认';
-          return `<div class="check-item"><span class="mark ${tone}">${mark}</span><div class="body"><b>${esc(r.text)}</b>
-            <div class="note"><span class="pill ${tone === 'grey' ? 'grey' : tone === 'no' ? 'yellow' : 'green'}">${label}</span>
-            本地记录：${esc(r.mine || '未记录')}${r.src ? `　来源：${esc(r.src)}` : ''}</div></div></div>`;
+        const rows = (e.rules || []).map((r) => {
+          const [label, tone, mark] = TIER[r.tier] || TIER.undetermined;
+          return `<li><span class="tier ${tone}">${mark} ${label}</span><span><b>${esc(r.text)}</b><br>
+            <span class="muted">${esc(r.why || '')}${r.src ? ' · 来源：' + esc(r.src) : ''}</span></span></li>`;
         }).join('');
-        const pend = e.pending.length
-          ? `<div class="notice grey" style="margin-top:10px"><b>${e.pending.length} 条待确认（不进三档）</b>：${e.pending.map((x) => esc(x.text)).join('；')}<br>原因是本地没有可用字段，或条目需要阈值比较而本仓 schema 未存比较符。这类条目<b>不猜</b>。</div>`
-          : '';
-        return `<div class="trial-item">
-          <div class="trial-head"><b>${esc(e.title)}</b><span class="pill grey">${esc(e.status || '状态未核实')}</span></div>
-          <div class="trial-counts"><span class="pill green">符合 ${e.counts.satisfied}</span><span class="pill yellow">冲突 ${e.counts.conflict}</span><span class="pill grey">待确认 ${e.counts.undetermined}</span><span class="note">登记号 ${esc(e.recordId)}${e.url ? ` · <a href="${esc(e.url)}" target="_blank" rel="noopener">登记页 ↗</a>` : ''}</span></div>
-          <div class="check-list">${rules}</div>${pend}
+        return `<div class="tier-block">
+          <div class="tier-head"><b>${esc(e.title)}</b></div>
+          <div class="trial-counts">
+            <span class="pill green">符合 ${e.counts.satisfied}</span>
+            <span class="pill yellow">冲突 ${e.counts.conflict}</span>
+            <span class="pill grey">待确认 ${e.counts.undetermined}</span>
+            <span class="note">可判定 ${e.decidable} / ${e.total} 条 · 登记号 ${esc(e.recordId)}${e.url ? ` · <a href="${esc(e.url)}" target="_blank" rel="noopener">登记页 ↗</a>` : ''}</span>
+          </div>
+          <ul class="list tier-rows">${rows}</ul>
         </div>`;
       }).join('');
     }
-    const matchCard = card('③ 匹配与分析（三档对照，不给百分比、不排序、不推荐）', matchBody,
+    const matchCard = card('③ 入排条款对照 · 三档', matchBody,
       esc(m?.footerNote || '本页只做文字对照，不做入组资格判定。') + (m?.channelsNote ? `　${esc(m.channelsNote)}` : ''));
+
+    const ruleCard = card('口径', `<ul class="list">
+      <li><span class="muted">登记状态，未核实；<b>登记 ≠ 有效 ≠ 安全 ≠ 可入组</b>。</span></li>
+      <li><span class="muted">不产出"匹配度 87%"这类综合分——数值化会把"沾到几个词"伪装成"你符合条件"。</span></li>
+      <li><span class="muted">排序按登记来源顺序，<b>不按档位排</b>——按档位排会让人以为前面的更适合。</span></li>
+      <li><span class="muted">「待确认」不等于不符合，只表示本机没有这一项记录（缺 ≠ 否）。</span></li>
+      <li><span class="muted">工作台不写"建议参加 / 适合你"；AI 只帮你整理命中证据与要问医生的问题。</span></li>
+    </ul>`);
 
     return head('transplant', '移植评估信息自检', '临床试验', aiButton('transplant', '帮我把这页的对照结果整理成下次问医生的问题清单，不要判断我能不能入组。'))
       + `<div class="notice warn" style="margin-bottom:16px"><b>这不是入组资格判定。</b>本页只做「你的档案记录 ↔ 登记条目原文」的文字对照；能不能参加由研究者和研究方案决定。</div>`
-      + pathCard + searchCard + matchCard;
+      + dossierCard + searchCard + matchCard + ruleCard;
   }
 
   /* ---------------- 页面：诊断追溯 ---------------- */

@@ -14,7 +14,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMatchModel, TIERS } from '../lib/trial-match.js';
+import { buildMatchModel, TIERS, factsOf, searchLeads } from '../lib/trial-match.js';
 
 const judgeOne = (rule, mine, { decidable = 1 } = {}) => {
   const m = buildMatchModel({
@@ -53,14 +53,65 @@ test('条款侧：其他反向措辞也要认出', () => {
   }
 });
 
-test('decidable=0 一律进待确认，不进三档', () => {
+test('decidable=0 落待确认，并且必须给出 why（不能是沉默的灰点）', () => {
   const m = buildMatchModel({
     trials: [{ recordId: 'T1', title: 't', ord: 0 }],
-    criteria: [{ id: 1, trial_record_id: 'T1', ord: 0, kind: 'k', category: 'c', rule_text: 'FVC %pred 不低于 45%', decidable: 0, fact_key: 'fvc_pred' }],
+    criteria: [{ id: 1, trial_record_id: 'T1', ord: 0, kind: 'k', category: 'c', rule_text: 'FVC %pred 不低于 45%', decidable: 0, fact_key: 'fvc_pred', source_note: '需要阈值比较' }],
     facts: { fvc_pred: { value_text: '48', source: 's' } },
   });
-  assert.equal(m.entries[0].rules.length, 0);
-  assert.equal(m.entries[0].pending.length, 1);
+  const e = m.entries[0];
+  assert.equal(e.pending.length, 1, 'decidable=0 要单列在 pending 里');
+  assert.equal(e.rules[0].tier, TIERS.UNDETERMINED, '也进 rules 以便逐条显示原因');
+  assert.ok(e.rules[0].why && e.rules[0].why.length > 4, '待确认必须带 why');
+  assert.equal(e.decidable, 0);
+  assert.equal(e.total, 1);
+});
+
+test('「未检测」不是阴性：必须落待确认，不能判冲突也不能判符合', () => {
+  /* 这是最伤人的一种错：把"没做过这项检查"判成"不符合"或"符合"，
+     都是替患者下了它没做过的结论。 */
+  for (const v of ['未检测', '未查', '未做', '不详']) {
+    assert.equal(judgeOne('入选：某项抗体阳性', v), TIERS.UNDETERMINED, `「${v}」应落待确认`);
+  }
+});
+
+test('每条档位都必须带 why', () => {
+  const m = buildMatchModel({
+    trials: [{ recordId: 'T1', title: 't', ord: 0 }],
+    criteria: [
+      { id: 1, trial_record_id: 'T1', ord: 0, kind: 'k', category: 'c', rule_text: '有记录', decidable: 1, fact_key: 'k1' },
+      { id: 2, trial_record_id: 'T1', ord: 1, kind: 'k', category: 'c', rule_text: '有记录', decidable: 1, fact_key: 'missing' },
+    ],
+    facts: { k1: { value_text: '有', source: 's' } },
+  });
+  for (const r of m.entries[0].rules) {
+    assert.ok(r.why && r.why.length > 2, `${r.tier} 也要 why`);
+  }
+});
+
+test('检索分层：结构化 → 文本 → 宽口径，且每层给得出证据', () => {
+  const facts = factsOf({ etiology: '类风湿关节炎相关间质性肺病', imaging: { rows: [['2026-01-01', 'HRCT', '网格影']] } });
+  const leads = searchLeads([
+    { recordId: 'A', title: '类风湿关节炎相关间质性肺病研究' },
+    { recordId: 'B', title: '肺纤维化治疗研究' },
+    { recordId: 'C', title: '罕见病登记研究' },
+  ], facts);
+  assert.deepEqual(leads.layers.map((l) => l.title), ['结构化命中', '文本命中', '宽口径命中']);
+  assert.equal(leads.layers[0].rows[0].recordId, 'A', '建档实体出现在标题里 → 结构化');
+  assert.ok(leads.layers[0].rows[0].structured[0].field, '结构化命中要说明是哪个字段');
+  assert.equal(leads.layers[1].rows[0].recordId, 'B', '题材词重合 → 文本');
+  assert.ok(leads.layers[1].rows[0].text.length > 0, '文本命中要逐词列出');
+  assert.equal(leads.layers[2].rows[0].recordId, 'C', '只沾大词 → 宽口径');
+});
+
+test('健康受试者/生物等效性单独兜出来（三层都不收时也不能静默消失）', () => {
+  /* 这条登记不沾任何题材词，三层全空。旧实现会让它凭空不见 —— 患者以为"没有相关研究"，
+     其实是"有一条但不招你这类人"。 */
+  const leads = searchLeads([{ recordId: 'X', title: '某某片健康受试者生物等效性研究' }], {});
+  assert.deepEqual(leads.counts, { structured: 0, text: 0, broad: 0 });
+  assert.equal(leads.flagged.length, 1);
+  assert.equal(leads.flagged[0].recordId, 'X');
+  assert.ok(leads.flaggedNote, '要有一句说明为什么列在这里');
 });
 
 test('本地没有该事实 → 待确认（不猜"符合"也不猜"冲突"）', () => {

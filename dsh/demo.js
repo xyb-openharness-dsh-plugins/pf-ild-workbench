@@ -9,6 +9,7 @@
  *      （ATTR 0.2.1 踩过：dsh/demo.js 引 ../demo/…，而 files 没写 demo/）。
  */
 import { buildDemoProfiles } from '../demo/build-demo-data.mjs';
+import { factsOf } from '../lib/trial-match.js';
 
 export function hasDemoData(db) {
   return db.prepare('SELECT COUNT(*) c FROM subjects').get().c > 0;
@@ -134,17 +135,17 @@ export function seedDemoData(db, { force = false } = {}) {
     const insFact = db.prepare(`INSERT INTO patient_facts
       (subject_id, fact_key, category, value_text, value_num, observed_on, source, evidence) VALUES (?,?,?,?,?,?,?,?)`);
     for (const [sid, p] of Object.entries(profiles)) {
-      const add = (k, cat, v, num, on, src, ev) => insFact.run(sid, k, cat, v, num ?? null, on ?? null, src ?? null, ev ?? 'B');
-      add('diagnosis_text', 'diagnosis', p.etiology || null, null, null, '诊断原文', 'B');
-      add('hrct_pattern', 'imaging', (p.imaging?.rows?.[0] && p.imaging.rows[0][2]) || null, null, p.imaging?.rows?.[0]?.[0] ?? null, '影像结论原文', 'B');
-      add('ipf_excluded', 'diagnosis', /IPF|特发性肺纤维化/i.test(p.etiology || '') ? '是（写明 IPF）' : '否（未写明 IPF）', null, null, '诊断原文', 'B');
-      add('antifibrotic_current', 'medication',
-        (p.med?.rows || []).some((r) => /尼达布|吡非尼酮/.test(String(r[0] ?? '')) && !/已停/.test(String(r[3] ?? ''))) ? '在用' : '未在用',
-        null, null, '用药记录', 'B');
-      add('pathology_available', 'pathology', (p.imaging?.rows || []).length > 0 ? '有影像资料' : '无影像资料', null, null, '影像档案', 'B');
-      const fvc = (p.metrics || []).find((m) => m.key === 'fvc');
-      const ps = fvc?.points || [];
-      add('fvc_pred', 'pft', ps.length ? String(ps[ps.length - 1].v) : null, ps.length ? Number(ps[ps.length - 1].v) : null, ps.length ? ps[ps.length - 1].d : null, '肺功能报告', 'B');
+      /* 事实抽取只在这里定义一次：lib/trial-match.js 的 factsOf。
+         原型数据（build-demo-data.mjs）也调它，两处不可能分叉。 */
+      const f = factsOf(p);
+      const CAT = {
+        diagnosis_text: 'diagnosis', hrct_pattern: 'imaging', ipf_excluded: 'diagnosis',
+        antifibrotic_current: 'medication', pathology_available: 'pathology', fvc_pred: 'pft',
+      };
+      for (const [key, fact] of Object.entries(f)) {
+        insFact.run(sid, key, CAT[key] ?? 'other', fact.value_text ?? null, fact.value_num ?? null,
+          fact.observed_on ?? null, fact.source ?? null, fact.evidence ?? 'B');
+      }
     }
 
     /* 元数据：规则集版本 / 生成时间 / 免责与通道说明，读模型直接取，

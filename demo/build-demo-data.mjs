@@ -21,7 +21,7 @@
 */
 import { DatabaseSync } from 'node:sqlite';
 import { writeFileSync, mkdirSync, realpathSync } from 'node:fs';
-import { buildMatchModel } from '../lib/trial-match.js';
+import { buildMatchModel, factsOf, searchLeads } from '../lib/trial-match.js';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -426,7 +426,7 @@ const DATA = {
       source_note: '本地取影像结论原文对照' },
     { trial: 'CTR20213153', kind: 'inclusion', category: 'pft',
       text: 'FVC %pred 不低于 45%（具体阈值以登记页为准）', decidable: 0, fact_key: 'fvc_pred',
-      source_note: '**需要阈值比较，本仓 schema 未存比较符 → 进待确认，不猜**' },
+      source_note: '需要阈值比较，本仓 schema 未存比较符 → 进待确认，不猜' },
     { trial: 'CTR20213153', kind: 'exclusion', category: 'diagnosis',
       text: '排除特发性肺纤维化（IPF）明确诊断者', decidable: 1, fact_key: 'ipf_excluded',
       source_note: '本地取诊断原文是否写明 IPF' },
@@ -675,19 +675,6 @@ function writeSqlite() {
  * 所以这里从 DEMO.profiles 现取，且**只取档案里确实有出处的字段**：
  * 没有的就不写 key，读侧自然得到 undetermined（待确认），不拿空值冒充"符合"。
  */
-function factsOf(p) {
-  const f = {};
-  f.diagnosis_text = { value_text: p.etiology || null, source: '诊断原文', evidence: 'B' };
-  f.hrct_pattern = { value_text: (p.imaging?.rows?.[0] && p.imaging.rows[0][2]) || null, source: '影像结论原文', evidence: 'B' };
-  f.ipf_excluded = { value_text: /IPF|特发性肺纤维化/i.test(p.etiology || '') ? '是（写明 IPF）' : '否（未写明 IPF）', source: '诊断原文', evidence: 'B' };
-  f.antifibrotic_current = { value_text: (p.med?.rows || []).some((r) => /尼达尼布|吡非尼酮/.test(String(r[0] ?? '')) && !/已停/.test(String(r[3] ?? ''))) ? '在用' : '未在用', source: '用药记录', evidence: 'B' };
-  f.pathology_available = { value_text: (p.imaging?.rows || []).length > 0 ? '有影像资料' : '无影像资料', source: '影像档案', evidence: 'B' };
-  const fvc = (p.metrics || []).find((m) => m.key === 'fvc');
-  const ps = fvc?.points || [];
-  if (ps.length) f.fvc_pred = { value_text: String(ps[ps.length - 1].v), value_num: Number(ps[ps.length - 1].v), observed_on: ps[ps.length - 1].d, source: '肺功能报告', evidence: 'B' };
-  return f;
-}
-
 function buildAllTrialMatch() {
   const criteria = DEMO.trialCriteria.map((c, i) => ({
     id: i + 1, trial_record_id: c.trial, ord: i, kind: c.kind, category: c.category,
@@ -696,13 +683,16 @@ function buildAllTrialMatch() {
   const trials = DEMO.trials.map((t, i) => ({ recordId: t.id, title: t.title, status: t.status, url: t.url, ord: i }));
   const out = {};
   for (const [sid, p] of Object.entries(DEMO.profiles)) {
+    const facts = factsOf(p);
     out[sid] = buildMatchModel({
-      trials, criteria, facts: factsOf(p),
+      trials, criteria, facts,
       ruleSetVersion: '2026-10-25.1',
       generatedAt: DEMO.generatedAt ?? null,
       footerNote: '本页只做「档案事实 ↔ 登记条目」的文字对照，不做入组资格判定，也不能替代研究者的评估。',
       channelsNote: '已查通道：chinadrugtrials（1 条）、ctv/ClinicalTrials.gov（1 条）。未查：ChiCTR、WHO ICTRP、openFDA。未查 ≠ 无结果。',
     });
+    /* 检索分层线索与三档对照一起给：页面要能回答"每条命中凭什么"，而不只是"命中几条" */
+    out[sid].leads = searchLeads(trials, facts);
   }
   return out;
 }
