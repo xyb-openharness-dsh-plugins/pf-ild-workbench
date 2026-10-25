@@ -9,6 +9,20 @@
  */
 import { readFileSync, existsSync, realpathSync, statSync } from 'node:fs';
 import { extname, join, normalize, relative, resolve, sep } from 'node:path';
+import { buildContextPack } from '../lib/ai-context.js';
+
+/** 读请求体（JSON）。上限 256KB，超限/非法一律抛错由调用方转 400。 */
+async function readBody(req, limit = 256 * 1024) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > limit) throw new Error('请求体超过 256KB');
+    chunks.push(chunk);
+  }
+  const text = Buffer.concat(chunks).toString('utf8');
+  return text.trim() === '' ? {} : JSON.parse(text);
+}
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -63,7 +77,7 @@ export function createHandler({ apiBase = '', publicDir, services }) {
     res.end(JSON.stringify(body));
   };
 
-  return function handle(req, res) {
+  return async function handle(req, res) {
     let pathname;
     try { pathname = new URL(req.url, 'http://localhost').pathname; } catch { return sendJson(res, 400, { error: 'Bad request' }); }
 
@@ -79,6 +93,17 @@ export function createHandler({ apiBase = '', publicDir, services }) {
       } catch (error) {
         /* 不裸 throw：把原因交给前端渲染错误横幅（禁白屏） */
         return sendJson(res, 500, { error: 'bootstrap failed', detail: String(error.message || error) });
+      }
+    }
+    /* AI 上下文包：只组装事实，不含判断（M6 只接入口，AI 能力归宿主） */
+    if (pathname === apiPrefix + '/ai/context') {
+      if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' });
+      let body;
+      try { body = await readBody(req); } catch { return sendJson(res, 400, { error: '正文不是合法 JSON' }); }
+      try {
+        return sendJson(res, 200, buildContextPack({ bootstrap: services.bootstrap(), selection: body.selection || {} }));
+      } catch (error) {
+        return sendJson(res, 400, { error: String(error.message || error) });
       }
     }
     if (pathname.startsWith(apiPrefix + '/')) return sendJson(res, 404, { error: 'Unknown API route' });
