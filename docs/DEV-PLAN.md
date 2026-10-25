@@ -24,12 +24,12 @@
 | 阶段 | 内容 | 出口判据（可验证） | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
 | M0 骨架 | 领取 + 建仓 + init + 接线前置 + 文档 9 件 | `npm run check` → `"staticPass": true`；`cordis.patch.yml` 含 `config.root: !!js dshHomePath('pf-ild-workbench')` 且注释不在首行；9 件文档存在且为本病种原创内容 | ✅ 实测通过（2026-10-25） | check 输出 staticPass true；Issue #33 已 claimed |
-| M1 调研 SPEC | 三路调研 + DIFF-MATRIX + SPEC + USER-RESEARCH + INTERACTION-DESIGN + HVT-REVIEW + SCENARIOS | 三路调研全部交付；重名率 55.0%→改名 44.4% ≤70%；HVT-REVIEW B=0/G=1/U=8；NHC #69 原文核到 A 级 | ✅ 文档齐备 · **待 G1 签认** | research/{FAMILY-COMPARISON,USER-RESEARCH,RESEARCH-MEDICAL}-2026-10-25.md；HVT-REVIEW §3 检索式 |
-| M2 原型 | demo 唯一源 + 四件套 + 32 号折叠卡 + 30 号窄宽 + HVT X1–X4 + 独立评审 P0=0 + README 截图 ≥4 | 四件套存在；X1–X4 断言 PASS（23/23 覆盖、0 孤儿页）；探针 5 档 × 23 页零溢出；README 实渲 10 张含折叠收/展；独立评审 P0 待收 | 🔧 待独立评审收口 | `npm run check:paths` PASS；`npm run probe:resp` 5×23 全绿；docs/screenshots/ |
-| M3 数据模型 | `schema/0001_initial.sql` + `freeze-contract.md` sha256 + 判读列断言 | 无 diagnosis/risk_level 类判定列（脚本断言）；freeze sha256 落档；G3 签认 | ⏳ | — |
-| M4 临床库 | `scripts/fetch-pf-ild-trials.mjs`（unified-trial MCP 四通道）→ 四件套 | `manifest = jsonl = sqlite` 三处条数一致；FAILED 通道如实记「未查过」 | ⏳ | — |
-| M5 开发版 | 七步移植 + 宿主接线件 + MinerU 六部件 + apiBase 定稿契约 + test 五套 | `npm run check` 全绿 + `npm run audit` 0 fail；V1 | ⏳ | — |
-| M6 装机 | 升版 → pack → 06 号四要素对照 tgz → corepack pnpm 装 → bundles 登记 → 新会话真机走查 → README 真机截图 | V2 真加载、V3 真机业务闭环，逐条有截图；`docs/release/<版本>/` | ⏳ | — |
+| M1 调研 SPEC | 三路调研 + DIFF-MATRIX + SPEC + USER-RESEARCH + INTERACTION-DESIGN + HVT-REVIEW + SCENARIOS | 三路调研全部交付；重名率 55.0%→改名 44.4% ≤70%；HVT-REVIEW B=0/G=1/U=8；NHC #69 原文核到 A 级 | ✅ **G1 已签认**（2026-10-25） | research/{FAMILY-COMPARISON,USER-RESEARCH,RESEARCH-MEDICAL}-2026-10-25.md；HVT-REVIEW §3 检索式 |
+| M2 原型 | demo 唯一源 + 四件套 + 32 号折叠卡 + 30 号窄宽 + HVT X1–X4 + 独立评审 P0=0 + README 截图 ≥4 | 四件套存在；X1–X4 断言 PASS（23/23 覆盖、0 孤儿页）；探针 5 档 × 23 页零溢出；README 实渲 10 张含折叠收/展；独立评审 P0 待收 | ✅ 已完成（独立评审 P0=0，4 次尝试后由子代理实证 5 项；docs/DESIGN-REVIEW.md） | `npm run check:paths` PASS；`npm run probe:resp` 5×23 全绿；docs/screenshots/ |
+| M3 数据模型 | `schema/0001_initial.sql` + `freeze-contract.md` sha256 + 判读列断言 | 无 diagnosis/risk_level 类判定列（脚本断言）；freeze sha256 落档；G3 签认 | ✅ 草案完成（21 表 + sha256 + 判据行）· **待 G3 签认** | `npm run check:schema` PASS |
+| M4 临床库 | `scripts/fetch-pf-ild-trials.mjs`（unified-trial MCP 四通道）→ 四件套 | `manifest = jsonl = sqlite` 三处条数一致；FAILED 通道如实记「未查过」 | ✅ 2 条 Trials.gov 在招（其余 3 通道未查，如实记） | `data/trials/pf-ild-trials.jsonl` |
+| M5 开发版 | 七步移植 + 宿主接线件 + MinerU 六部件 + apiBase 定稿契约 + test 五套 | `npm run check` 全绿 + `npm run audit` 0 fail；V1 | ✅ check/audit 通过（audit 2 项待人工已留痕）· 宿主形态未真机 | `docs/AUDIT-MANUAL-REVIEW.md` |
+| M6 装机 | 升版 → pack → 06 号四要素对照 tgz → corepack pnpm 装 → bundles 登记 → 新会话真机走查 → README 真机截图 | V2 真加载、V3 真机业务闭环，逐条有截图；`docs/release/<版本>/` | ⛔ 未执行（无真机环境） | — |
 | M7 发布 | tag + GitHub Release（tgz + sha256）+ CHANGELOG 发版段 | Release 页面存在、tgz 可下载、sha256 一致 | ⏳ | — |
 | M8 回填 | 组织 BACKLOG 状态行（31 号：只改状态与招募列，🔵 版本+日期+依据），走 PR 前先 pull | PR 合并 + 项目 RELEASE.md 动作表补一行 | ⏳ | — |
 | M9 经验收敛 | 新坑→项目 DEV-REQUIREMENTS；通用坑→starter LESSONS；流程→编号文档+prompts；可断言→检查器待实施清单；starter CHANGELOG 记「从 PF-ILD 回收了什么」 | 至少一条「下一轮直接受益」的回流；`check-starter` + `npm test` 通过 | ⏳ | — |
