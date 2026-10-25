@@ -32,7 +32,7 @@
 | M6 装机 | 升版 → pack → 06 号四要素对照 tgz → corepack pnpm 装 → bundles 登记 → 新会话真机走查 → README 真机截图 | V2 真加载、V3 真机业务闭环，逐条有截图；`docs/release/<版本>/` | ⛔ 未执行（无真机环境） | — |
 | M7 发布 | tag + GitHub Release（tgz + sha256）+ CHANGELOG 发版段 | Release 页面存在、tgz 可下载、sha256 一致 | ✅ [v0.2.0 Release](https://github.com/xyb-openharness-dsh-plugins/pf-ild-workbench/releases/tag/v0.2.0) | `docs/release/v0.2.0/` |
 | M8 回填 | 组织 BACKLOG 状态行（31 号：只改状态与招募列，🔵 版本+日期+依据），走 PR 前先 pull | PR 合并 + 项目 RELEASE.md 动作表补一行 | ✅ PR [#39](https://github.com/xyb-openharness-dsh-plugins/.github/pull/39) 待合并 | `BACKLOG.md` |
-| M9 经验收敛 | 新坑→项目 DEV-REQUIREMENTS；通用坑→starter LESSONS；流程→编号文档+prompts；可断言→检查器待实施清单；starter CHANGELOG 记「从 PF-ILD 回收了什么」 | 至少一条「下一轮直接受益」的回流；`check-starter` + `npm test` 通过 | ✅ L2 回流 PR [starter#1](https://github.com/xyb-openharness-dsh-plugins/xyb-workbench-starter/pull/1)；L1 记 L15–L17 | `docs/REFLOW-TO-STARTER.md` |
+| M9 经验收敛 | 新坑→项目 DEV-REQUIREMENTS；通用坑→starter LESSONS；流程→编号文档+prompts；可断言→检查器待实施清单；starter CHANGELOG 记「从 PF-ILD 回收了什么」 | 至少一条「下一轮直接受益」的回流；`check-starter` + `npm test` 通过 | ✅ L2 回流 PR [starter#1](https://github.com/xyb-openharness-dsh-plugins/xyb-workbench-starter/pull/1)（三个闸门：版本字面量 / 静态引用完整性 L3 / 选择上限一致性 L2）；L1 记 L15–L20 | `docs/REFLOW-TO-STARTER.md` |
 
 ## 闸口
 
