@@ -1,0 +1,11 @@
+- insert:
+    - id: pf-ild-main
+      name: "@xyb-community/pf-ild-workbench"
+      config:
+        # 接线前置（M0）：root 指向本机资料目录，宿主按会话授权；slug 与目录同名。
+        # M5 起 dsh 侧 Config 声明 root 并由 store 读取落 SQLite。
+        root: !!js dshHomePath('pf-ild-workbench')
+# 两条硬规则：① name 必须是 npm 包名（相对/绝对路径 Node 解析不到）；
+# ② 注释不能放文件首行——静态检查器以首字符判定 insert 数组，注释一律写在条目之后
+#（来源：starter docs/LESSONS.md 183 行 GBM 踩 1）。
+# id 与 dsh/index.js 的 name 导出由 scripts/check-workbench-package.mjs 比对，别手改这里。

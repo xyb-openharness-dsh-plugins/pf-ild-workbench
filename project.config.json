@@ -1,0 +1,18 @@
+{
+  "packageName": "@xyb-community/pf-ild-workbench",
+  "title": "小呼宝 BreathPal 肺纤维化工作台",
+  "repository": "https://github.com/xyb-openharness-dsh-plugins/pf-ild-workbench",
+  "description": "本机优先的进行性纤维化性间质性肺疾病（PF-ILD）肺功能趋势、氧状态、急性加重事件与复诊准备工作台",
+  "slug": "pf-ild",
+  "targetUsers": "PF-ILD 患者本人为主、家属辅助记录；中老年慢病程，跨病因表型（CTD-ILD/纤维化性HP/特发性等）",
+  "scenario": "肺功能（FVC%pred/DLCO%pred）半年一次的趋势判断；气促与氧状态的日常快记；抗纤维化药物耐受与剂量变更；急性加重住院前后的信息串联；移植评估时点的信息准备与复诊问题清单",
+  "completion": "得到来源可追溯的个人纤维化病程档案：肺功能与氧状态趋势、急性加重事件卡、用药耐受记录、复诊准备材料；所有信息经用户核对入档，不提供诊断与治疗建议",
+  "coreFlow": [
+    "录入肺功能报告关键值，查看FVC/DLCO趋势走向",
+    "日常快记气促等级、SpO2与氧流量",
+    "记录抗纤维化药物剂量变更与耐受事件",
+    "登记急性加重住院事件并串联前后趋势",
+    "生成复诊问题清单与移植评估信息自检档案"
+  ],
+  "layoutMode": "business-first"
+}
