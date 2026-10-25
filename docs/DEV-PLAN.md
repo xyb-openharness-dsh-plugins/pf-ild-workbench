@@ -38,7 +38,7 @@
 
 | 闸口 | 内容 | 状态 | 签认 |
 | --- | --- | --- | --- |
-| G1 | 业务流程与功能（SPEC + PATIENT-FLOW + INTERACTION-DESIGN 交签认，HVT B 级清零） | ⏳ 未签 | 待用户签认 |
+| G1 | 业务流程与功能（SPEC + PATIENT-FLOW + INTERACTION-DESIGN 交签认，HVT B 级清零） | ✅ **已签认 2026-10-25** | 用户；B=0、G=0（S07 方案 A→F-NP-01）、U=8 如实声明；留痕 DESIGN-SESSION DESIGN-05/06/07 |
 | G2 | HTML 原型（P1 发布可见性 + X1–X4 路径一致性走查） | ⏳ 未签 | 待用户签认 |
 | G3 | 数据模型与数据流（未过不建表、不写迁移） | ⏳ 未签 | 待用户签认 |
 | V1 | 包级：`npm run check` 全绿 | M0 基线已 ✅（不代表 M5 完成） | — |

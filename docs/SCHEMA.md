@@ -21,6 +21,7 @@
 | ae_event（急性加重） | ae.* | subject | event_date/episode_end/care_setting_text/trigger_text/discharge_meds_json/oxygen_rx_text/review_due_at | 折叠卡 32 号渲染源 | record | 长期 |
 | imaging_study | img.* | subject | study_date/modality/hrct_desc_text/report_doc_id/section_title | **按真实频率不加密** | record | 长期 |
 | transplant_prep | tp.* | subject | item_key/item_label/has_record/last_date/note | 只列要问的，不给答案 | record | 长期 |
+| nutrition_log（G1 方案 A 新增） | np.* | subject | logged_at/meal_text/intake_amount(qual: 少/中/多)/symptom_note(text)/weight_kg | **不做热量换算、不做肌少症判定**；intake_amount 为分类不进趋势折线 | record | 长期 |
 | visit_encounter | enc.* | subject | encountered_at/questions_checked_json | 复诊准备生成物 | record | 长期 |
 | question_item | qitem.* | subject | item_key/item_label/asked(bool) | 用户自录勾选 | record | 长期 |
 | trial | trial.* | — | source/source_id/trial_id/status/pubdate/summary_zh | M4 四件套产物 | cache | 按来源失效 |
@@ -34,7 +35,7 @@ subject ─┬─ document(source=original)
          ├─ pft_test ─┐
          ├─ med_record ├─ obs(metric_definition, kind ∈ numeric/grade/qual)
          ├─ oxygen_therapy ┘   (grade/qual 的 dec IS NULL 且 kind ∈ {grade,qual} → 不进趋势折线)
-         ├─ daily_quick_note / ae_event / imaging_study / transplant_prep
+         ├─ daily_quick_note / ae_event / imaging_study / transplant_prep / nutrition_log
          └─ decision_version(更正只新增版本，不覆盖旧行)
 ```
 
