@@ -9,7 +9,7 @@ import { parseArgs } from 'node:util';
 import { Workbench } from '../dsh/workbench.js';
 import { createHandler } from '../dsh/server.js';
 import { DEV_PORT } from '../lib/identity.js';
-import { version, displayVersion } from '../lib/version.js';
+import { version, displayVersion, build as buildDate } from '../lib/version.js';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -28,7 +28,7 @@ workbench.open();
 const handler = createHandler({
   apiBase: '',
   publicDir: join(dirname(fileURLToPath(import.meta.url)), '..', 'public'),
-  services: { version, displayVersion, capabilities: ['bootstrap', 'profile', 'health'], bootstrap: () => workbench.bootstrap() },
+  services: { version, displayVersion, buildDate, capabilities: ['bootstrap', 'profile', 'health'], bootstrap: () => workbench.bootstrap() },
 });
 const { createServer } = await import('node:http');
 createServer(handler).listen(port, '127.0.0.1', () => {

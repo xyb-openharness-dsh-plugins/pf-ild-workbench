@@ -136,6 +136,11 @@ function transformHtml(src) {
     '<title>小呼宝 BreathPal · PF-ILD 工作台</title>\n<meta name="robots" content="noindex,nofollow">');
   out = out.replace('<div class="prototype-bar"><span><b>交互原型 v0.1.0</b> · 全部为模拟资料（临床试验为占位，待 M4 检索填充）</span><span>仅本页演示 · 刷新重置 · 未接入 DSH / AI</span></div>',
     '<div class="prototype-bar"><span><b>__VERSION_DISPLAY__</b> · 全部为模拟资料（临床试验为占位，待 M4 检索填充）</span><span>本机数据 · 不上传 · AI 面板由宿主提供</span></div>');
+  /* 其余版本字面量（版本徽标 / 页脚）一律占位：版面由服务端注入，不在页面写死
+     —— 手写死版本号 = 三处版本打架的复发点（家族高频故障）。 */
+  out = out.replace(/v0\.1\.0/g, '__VERSION_DISPLAY__');
+  /* 构建日期同理：占位由注入器填，避免"页面显示的构建日永远是原型那天" */
+  out = out.replace(/2026-10-25/g, '__BUILD_DATE__');
   return out;
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "@xyb-community/pf-ild-workbench",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "本机优先的进行性纤维化性间质性肺疾病（PF-ILD）肺功能趋势、氧状态、急性加重事件与复诊准备工作台",
   "private": true,
   "type": "module",

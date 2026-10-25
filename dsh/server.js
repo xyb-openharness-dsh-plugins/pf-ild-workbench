@@ -64,11 +64,13 @@ export function contentType(file) {
  *   - `__VERSION__` / `__VERSION_DISPLAY__`：来自 lib/version.js 唯一源。
  * 这样 public/ 可以保持"原型定点移植"的产物，不因为两种形态分成两份。
  */
-export function injectTokens(text, { apiBase = '', version = '', displayVersion = '' } = {}) {
+export function injectTokens(text, { apiBase = '', version = '', displayVersion = '', buildDate = '' } = {}) {
   return text
     .replace(/__API_BASE__/g, apiBase)
     .replace(/__VERSION_DISPLAY__/g, displayVersion)
-    .replace(/__VERSION__/g, version);
+    .replace(/__VERSION__/g, version)
+    /* 构建日期：页面不写死（原型那天会被误当"实际构建日"） */
+    .replace(/__BUILD_DATE__/g, buildDate);
 }
 
 export function createHandler({ apiBase = '', publicDir, services }) {
@@ -117,13 +119,13 @@ export function createHandler({ apiBase = '', publicDir, services }) {
       const index = resolveStatic(publicDir, '/index.html');
       if (!index) { res.writeHead(404); return res.end('Not found'); }
       res.writeHead(200, { 'content-type': MIME['.html'], 'cache-control': 'no-store' });
-      return res.end(injectTokens(readFileSync(index, 'utf8'), { apiBase, version: services.version, displayVersion: services.displayVersion }));
+      return res.end(injectTokens(readFileSync(index, 'utf8'), { apiBase, version: services.version, displayVersion: services.displayVersion, buildDate: services.buildDate }));
     }
     res.writeHead(200, { 'content-type': contentType(file), 'cache-control': 'no-store' });
     if (req.method === 'HEAD') return res.end();
     const raw = readFileSync(file, 'utf8');
     const injected = /\.(?:html|css|js|mjs)$/.test(file)
-      ? injectTokens(raw, { apiBase, version: services.version, displayVersion: services.displayVersion })
+      ? injectTokens(raw, { apiBase, version: services.version, displayVersion: services.displayVersion, buildDate: services.buildDate })
       : raw;
     res.end(injected);
   };

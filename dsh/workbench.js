@@ -9,7 +9,7 @@ import { openStore, closeStore, migrate } from './store.js';
 import { seedDemoData, hasDemoData } from './demo.js';
 import { readBootstrap, readProfile } from './readmodels.js';
 import { DB_FILE, HOME_DIR } from '../lib/identity.js';
-import { version, displayVersion } from '../lib/version.js';
+import { version, displayVersion, build as buildDate } from '../lib/version.js';
 
 export class Workbench {
   /**
@@ -59,7 +59,7 @@ export class Workbench {
   /** 供宿主 /health 用：只报事实，不报"是否已验证" */
   status() {
     return {
-      version, displayVersion,
+      version, displayVersion, buildDate,
       homeDir: HOME_DIR,
       dbFile: DB_FILE,
       root: this.root,
