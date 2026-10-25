@@ -75,7 +75,7 @@
     const [view, subName] = path.split('/');
     if (!PAGES.some((x) => x[0] === view)) return null;
     const params = new URLSearchParams(query || '');
-    return { view, sub: subName || '', fold: params.get('fold') === '1', agent: params.get('agent') === '1', draft: params.get('draft') === '1' };
+    return { view, sub: subName || '', fold: params.get('fold') === '1', agent: params.get('agent') === '1', draft: params.get('draft') === '1', probe: params.get('probe') || '' };
   }
   function applyHash() {
     const h = parseHash();
@@ -85,6 +85,7 @@
     state._foldOpen = Boolean(h.fold);
     state._wantAgent = Boolean(h.agent);
     state._wantDraft = Boolean(h.draft);
+    state._wantProbe = h.probe;
     return true;
   }
   function syncHash() {
@@ -695,10 +696,41 @@
     $('#font-toggle').setAttribute('aria-pressed', String(state.large));
   });
 
+  /* 响应式探针：`?probe=resp` 时逐页渲染并测量横向溢出，把结果写进 DOM 供无头浏览器抓取。
+     30 号要求"每条规则要有探针或单测兜底，不许口头说没问题"。 */
+  function runResponsiveProbe() {
+    const out = [];
+    const keep = { view: state.view, sub: { ...state.sub } };
+    for (const [key, label] of PAGES) {
+      const subs = SUBPAGES[key] || [null];
+      for (const sn of subs) {
+        state.view = key;
+        if (sn) state.sub[key] = sn;
+        render();
+        const de = document.documentElement;
+        const overflow = de.scrollWidth - de.clientWidth;
+        /* 规则 3：行内标签不得成为 flex item 被压成竖排单字（抽样：任一元素宽度 < 24px 且高度 > 宽度×2） */
+        let squeezed = 0;
+        document.querySelectorAll('#main .row-main > *, #main .check-item .body > *').forEach((el) => {
+          const r = el.getBoundingClientRect();
+          if (r.width > 0 && r.width < 24 && r.height > r.width * 2) squeezed++;
+        });
+        out.push({ page: key + (sn ? '/' + sn : ''), label, overflow, squeezed, width: de.clientWidth });
+      }
+    }
+    state.view = keep.view; state.sub = keep.sub; render();
+    const pre = document.createElement('pre');
+    pre.id = 'probe-result';
+    pre.textContent = JSON.stringify({ viewport: window.innerWidth, pages: out,
+      bad: out.filter((x) => x.overflow > 1 || x.squeezed > 0) }, null, 2);
+    document.body.appendChild(pre);
+  }
+
   applyHash();
   window.addEventListener('hashchange', () => { if (applyHash()) { render(); maybeOpenFromHash(); } });
   render();
   maybeOpenFromHash();
+  if (state._wantProbe === 'resp') runResponsiveProbe();
   function maybeOpenFromHash() {
     if (state._wantAgent) toggleAgent(true);
     if (state._wantDraft) { const { label } = contextFor(state.view); openAgentDraft(state.view, `帮我把「${label}」这一页的记录整理成复诊材料。`); }
