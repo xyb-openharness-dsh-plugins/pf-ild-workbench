@@ -24,7 +24,7 @@
 | 阶段 | 内容 | 出口判据（可验证） | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
 | M0 骨架 | 领取 + 建仓 + init + 接线前置 + 文档 9 件 | `npm run check` → `"staticPass": true`；`cordis.patch.yml` 含 `config.root: !!js dshHomePath('pf-ild-workbench')` 且注释不在首行；9 件文档存在且为本病种原创内容 | ✅ 实测通过（2026-10-25） | check 输出 staticPass true；Issue #33 已 claimed |
-| M1 调研 SPEC | 三路调研 + DIFF-MATRIX + SPEC + USER-RESEARCH + INTERACTION-DESIGN + HVT-REVIEW | DIFF-MATRIX 一级重名率 55.0%→改名 44.4% ≤70%（实测回填）；HVT-REVIEW B=0；G1 待用户签认 | 🔧 文档齐备待签认 | research/FAMILY-COMPARISON 实测；HVT-REVIEW §3 检索式 |
+| M1 调研 SPEC | 三路调研 + DIFF-MATRIX + SPEC + USER-RESEARCH + INTERACTION-DESIGN + HVT-REVIEW + SCENARIOS | 三路调研全部交付；重名率 55.0%→改名 44.4% ≤70%；HVT-REVIEW B=0/G=1/U=8；NHC #69 原文核到 A 级 | ✅ 文档齐备 · **待 G1 签认** | research/{FAMILY-COMPARISON,USER-RESEARCH,RESEARCH-MEDICAL}-2026-10-25.md；HVT-REVIEW §3 检索式 |
 | M2 原型 | demo 唯一源 + 四件套 + 32 号折叠卡 + 30 号窄宽 + HVT X1–X4 + 独立评审 P0=0 + README 截图 ≥4 | `prototypes/v0.2/` 四件套存在；DESIGN-REVIEW P0=0 有修复留痕；README 实渲截图 ≥4 张 | ⏳ 未实现 | — |
 | M3 数据模型 | `schema/0001_initial.sql` + `freeze-contract.md` sha256 + 判读列断言 | 无 diagnosis/risk_level 类判定列（脚本断言）；freeze sha256 落档；G3 签认 | ⏳ | — |
 | M4 临床库 | `scripts/fetch-pf-ild-trials.mjs`（unified-trial MCP 四通道）→ 四件套 | `manifest = jsonl = sqlite` 三处条数一致；FAILED 通道如实记「未查过」 | ⏳ | — |
