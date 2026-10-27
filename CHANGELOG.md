@@ -2,6 +2,16 @@
 
 家族口径：只写「版本 · 日期 · 改了什么 · 依据」，不写营销话术。
 
+## v0.2.4 · 2026-10-27
+
+### 36 号 v2 补齐（指南可点 + 状态卡）
+- 从零引入疾病概要三件套：`prototypes/v0.2/{primer.js,primer.css,primer-data.js}`，顶栏「?」入口，四段固定顺序 `definition → evidence → landscape → trend`。
+- 数据只取自本仓 README、`docs/CLINICAL-DATA-2026.md`、`docs/METRIC-GRADING.md`、`research/RESEARCH-MEDICAL-2026-10-25.md` 与 `data/trials/pf-ild/` 的已记录事实；不写判定、不复制指南条文。
+- 链接 2 条（均真浏览器 `verify-links.mjs` = OK）：北京协和医院发布页、ATS 官方指南页；NHC 官网通知页对脚本返回 412，如实标「据二次来源」，本机另存官方 PDF。登记库记录页为薄页，标 `nolink` + 说明（台账 1 条）。
+- 看板首卡加入 §2.6 状态卡四件：eyebrow / 锚点派生大字（本仓无锚点 → 「待初始化」+ 三步初始化）/ 现状行（阶段、状态、下次日期与事项）/ 出口按钮排（肺功能趋势 + 疾病概要副按钮）。
+- 装机层同步：`scripts/migrate-public.mjs` 原样复制三件套，`--check` 纳入 `npm run check`；`public/` 由原型定点移植生成，随包发出。
+- 新增 `scripts/check-primer-links.mjs`（L1–L12）与 `scripts/probe-disease-primer.mjs`（P1–P9 + E0）。
+
 ## v0.2.0 · 2026-10-25
 
 ### 数据层从零到可用（M3 + M4 + M5）

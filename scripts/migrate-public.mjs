@@ -164,6 +164,10 @@ const files = [
   ['index.html', transformHtml],
   ['style.css', transformCss],
   ['app.js', transformApp],
+  /* 36 号疾病概要三件套：原样复制，不做定点替换（数据/模块/样式三处保持同源） */
+  ['primer.css', (src) => src],
+  ['primer-data.js', (src) => src],
+  ['primer.js', (src) => src],
 ];
 
 if (check) {

@@ -291,10 +291,48 @@
     }).join('');
     const aeRows = p.ae.rows;
     const tpRows = p.transplant.rows.filter((r) => r[2] === 0);
+    /* 36 号 §2.6 状态卡四件：eyebrow / 锚点派生天数 / 现状行 / 出口按钮排。
+       本仓档案没有「移植 Day 0 / 诱导 D1」这类锚点日，所以天数显示「待初始化」，
+       并给三步初始化入口；不手填天数、不造锚点数据。 */
+    const stage = (p.path && p.path.length) ? p.path[p.path.length - 1] : '尚未记录';
+    const treatmentState = (p.path || []).includes('抗纤维化') ? '抗纤维化治疗中' : '按医嘱随访';
+    const nextRhythm = (p.rhythm && p.rhythm.length) ? p.rhythm[0] : null;
+    const nextText = nextRhythm ? `${nextRhythm[3]}（${nextRhythm[0]}）` : '尚未记录';
     return `
     <div class="page-head"><div><span class="eyebrow">看板</span><h1>${esc(p.name)}的档案</h1>
       <p>${esc(p.headline)}</p></div>
       <div class="actions">${aiButton('dashboard', `帮我用一句话整理${p.name}现在的整体情况，并列出这次复诊最该问的三件事。`)}</div></div>
+
+    <section class="card status-card" aria-labelledby="status-card-title">
+      <div class="status-card-head">
+        <span class="eyebrow">D+N 状态卡 · 距下一次复诊</span>
+        <span class="pill grey">待初始化</span>
+      </div>
+      <div class="status-card-main">
+        <div class="status-day">
+          <b id="status-card-title">待初始化</b>
+          <span>还没有可用于派生天数的锚点日；下面三步先建好档案与资料目录。</span>
+        </div>
+        <dl class="status-facts">
+          <div><dt>当前阶段</dt><dd>${esc(stage)}</dd></div>
+          <div><dt>状态</dt><dd>${esc(treatmentState)}</dd></div>
+          <div><dt>下次</dt><dd>${esc(nextText)}</dd></div>
+        </dl>
+      </div>
+      <div class="status-steps">
+        <div class="status-steps-head"><b>三步初始化</b><span>档案 → 资料目录 → 第一条记录</span></div>
+        <ol>
+          <li><span class="step-n">1</span><div><b>确认档案</b><p>当前是「${esc(p.name)}」的档案；多人共用一台机器时先切换或新建。</p></div><button class="text-button" data-action="profiles">切换档案</button></li>
+          <li><span class="step-n">2</span><div><b>指定本机资料目录</b><p>目录只在本机读取、不上传；选定后服务才能读到已有记录。</p></div><button class="text-button" data-action="open-store">选择目录</button></li>
+          <li><span class="step-n">3</span><div><b>补一条肺功能或复诊日期</b><p>有了第一条记录，这一卡才会按锚点派生天数。</p></div><a class="text-button" href="#pft">去登记</a></li>
+        </ol>
+      </div>
+      <div class="status-actions">
+        <a class="primary status-primary" href="#pft">看肺功能趋势（FVC/DLCO）→</a>
+        <button class="soft" data-primer-open aria-label="疾病概要：定义、医学资料与指南情况、治疗全景、发展趋势">疾病概要：进行性纤维化性间质性肺疾病是什么？</button>
+      </div>
+      <p class="small-note">大字天数由锚点日派生，不手填；没有锚点就显示「待初始化」。阶段、状态与下次日期只取档案里已记录的原文。</p>
+    </section>
 
     <div class="notice blue" style="margin-bottom:16px">
       <b>这一页只做两件事：</b>把散落的记录放到同一条时间线上，并帮你准备下一次沟通。工作台不做诊断、不判断病情好坏、不给治疗建议。

@@ -119,6 +119,34 @@ small{font-size:12px;color:var(--muted)}
 .small-note{font-size:11.5px;color:var(--muted);margin-top:8px}
 .source-note{font-size:11px;color:var(--muted);border-top:1px dashed var(--line);padding-top:9px;margin-top:12px;line-height:1.6}
 
+/* ---------- 看板首卡：36 号 §2.6 病程状态卡 ---------- */
+.status-card{display:flex;flex-direction:column;gap:14px;margin-bottom:16px;border-color:#cfe0f3;background:linear-gradient(180deg,#fff 0%,#f8fbff 100%)}
+.status-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.status-card-main{display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap}
+.status-day{display:flex;flex-direction:column;gap:3px;min-width:190px;max-width:42ch}
+.status-day b{font-size:28px;line-height:1.15;color:var(--violet-deep);font-weight:700;letter-spacing:-.5px}
+.status-day span{font-size:11.5px;color:var(--muted);line-height:1.6}
+.status-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 22px;margin:0;flex:1;min-width:280px}
+.status-facts div{min-width:0}
+.status-facts dt{font-size:10.5px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+.status-facts dd{margin:2px 0 0;font-size:13.5px;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+.status-steps{border-top:1px dashed var(--line);padding-top:12px}
+.status-steps-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.status-steps-head b{font-size:13px}
+.status-steps-head span{font-size:11px;color:var(--muted)}
+.status-steps ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.status-steps li{display:flex;gap:9px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 11px;min-width:0}
+.status-steps li .step-n{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--violet-soft);color:var(--violet-deep);font-size:11px;font-weight:700;flex:0 0 auto}
+.status-steps li > div{flex:1;min-width:0}
+.status-steps li b{display:block;font-size:12.5px}
+.status-steps li p{font-size:11.5px;line-height:1.6;margin:3px 0 6px}
+.status-steps li .text-button{min-height:28px;padding:0;border:0;background:none;font-size:11.5px;color:var(--violet-deep);text-align:left}
+.status-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center;border-top:1px dashed var(--line);padding-top:12px}
+.status-primary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 16px;border-radius:var(--radius-sm);text-decoration:none;font-size:13.5px;color:#fff}
+.status-primary:hover{color:#fff;text-decoration:none}
+@media (max-width:1100px){.status-steps ol{grid-template-columns:1fr}.status-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.status-facts{grid-template-columns:1fr}.status-day b{font-size:24px}.status-actions .primary,.status-actions .soft{width:100%}}
+
 /* 记录行：标签 + 值 + 说明纵向堆（30 号规则 1） */
 .rows{display:flex;flex-direction:column;gap:0}
 .row{display:flex;flex-direction:column;gap:3px;padding:12px 0;border-top:1px solid var(--line);min-width:0}

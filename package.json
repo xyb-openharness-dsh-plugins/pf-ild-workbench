@@ -1,6 +1,6 @@
 {
   "name": "@xyb-community/pf-ild-workbench",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "本机优先的进行性纤维化性间质性肺疾病（PF-ILD）肺功能趋势、氧状态、急性加重事件与复诊准备工作台",
   "private": true,
   "type": "module",
@@ -23,7 +23,7 @@
     "schema"
   ],
   "scripts": {
-    "check": "node --check dsh/index.js && node --check lib/client.js && node scripts/check-workbench-package.mjs . && node scripts/check-host-contract.mjs && node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/*.test.mjs && node scripts/build-version.mjs --check && node scripts/check-wording.mjs && node scripts/build-client.mjs --check && node scripts/check-static-refs.mjs && node scripts/check-choice-limit.mjs",
+    "check": "node --check dsh/index.js && node --check lib/client.js && node scripts/check-workbench-package.mjs . && node scripts/check-host-contract.mjs && node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/*.test.mjs && node scripts/build-version.mjs --check && node scripts/check-wording.mjs && node scripts/build-client.mjs --check && node scripts/migrate-public.mjs --check && node scripts/check-static-refs.mjs && node scripts/check-choice-limit.mjs && node scripts/check-primer-links.mjs",
     "check:host": "node scripts/check-host-contract.mjs",
     "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/*.test.mjs",
     "audit": "node scripts/check-conformance.mjs .",
@@ -41,7 +41,9 @@
     "fetch:trials": "node --disable-warning=ExperimentalWarning scripts/fetch-pf-ild-trials.mjs",
     "build:client": "node scripts/build-client.mjs",
     "check:static-refs": "node scripts/check-static-refs.mjs",
-    "check:choice-limit": "node scripts/check-choice-limit.mjs"
+    "check:choice-limit": "node scripts/check-choice-limit.mjs",
+    "check:primer-links": "node scripts/check-primer-links.mjs",
+    "probe:primer": "node scripts/probe-disease-primer.mjs"
   },
   "dsh": {
     "bundle": {
