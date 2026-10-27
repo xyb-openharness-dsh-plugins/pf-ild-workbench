@@ -4,6 +4,8 @@
 
 ## v0.2.4 · 2026-10-27
 
+- AI 对话集成（评审反馈）：顶栏「AI 对话」改为请求宿主原生会话（`pf-ild:agent-open`），去掉页面自建的 `#agent-dock` 演示面板（含「整理本页要点」「模拟回复自检」与窄/标准/宽三档）——嵌入式下原生会话是唯一 AI 面板（脚手架 34 号 §2b）。页面里的「与 AI 一起整理」保留预览弹窗：私密项默认不带、草稿可改，确认后 `pf-ild:agent-draft` 只填进宿主原生输入框，不自动发送。
+
 ### 36 号 v2 补齐（指南可点 + 状态卡）
 - 从零引入疾病概要三件套：`prototypes/v0.2/{primer.js,primer.css,primer-data.js}`，顶栏「?」入口，四段固定顺序 `definition → evidence → landscape → trend`。
 - 数据只取自本仓 README、`docs/CLINICAL-DATA-2026.md`、`docs/METRIC-GRADING.md`、`research/RESEARCH-MEDICAL-2026-10-25.md` 与 `data/trials/pf-ild/` 的已记录事实；不写判定、不复制指南条文。

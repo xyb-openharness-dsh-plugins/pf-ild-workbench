@@ -29,7 +29,8 @@
       <div class="breadcrumb">小呼宝工作台 <span>/</span> <b id="breadcrumb">看板</b></div>
       <div class="top-actions">
         <button class="status" id="ready-store" data-action="open-store" aria-label="资料目录：未指定"><i class="grey"></i><span>资料目录</span><b id="store-state">未指定</b></button>
-        <button class="status" id="agent-toggle" data-action="agent" aria-expanded="false" aria-label="AI 对话：点击打开右侧原生会话面板"><i class="grey"></i><span>AI 对话</span><b id="agent-state">未进入激活</b></button>
+        <!-- AI 对话＝宿主原生会话入口：页面不自建聊天窗（scripts 34 号 §2b 面板唯一性） -->
+        <button class="status" id="agent-toggle" data-action="agent-open" aria-label="AI 对话：请宿主打开原生会话"><i class="grey"></i><span>AI 对话</span><b id="agent-state">未进入激活</b></button>
         <button data-action="settings" aria-label="打开设置：资料目录、文档解析、临床数据库">设置</button>
         <button id="font-toggle" aria-pressed="false" title="切换大字">大字 Aa</button>
         <button class="dp-trigger" data-primer-open aria-label="疾病概要：定义、医学资料与指南情况、治疗全景、发展趋势" title="疾病概要：定义 · 指南 · 治疗全景 · 趋势">?</button>
@@ -38,23 +39,6 @@
     </header>
     <div class="work-grid" id="work-grid">
       <main id="main" tabindex="-1"></main>
-      <aside class="agent-dock" id="agent-dock" aria-label="AI 原生会话面板" hidden>
-        <div class="agent-head">
-          <span class="dot" id="agent-dot"></span><b>AI 对话</b>
-          <div class="spacer"></div>
-          <div class="agent-sizes" role="group" aria-label="面板宽度">
-            <button data-action="agent-size" data-size="narrow" aria-pressed="false" title="窄">窄</button>
-            <button data-action="agent-size" data-size="std" aria-pressed="true" title="标准">标准</button>
-            <button data-action="agent-size" data-size="wide" aria-pressed="false" title="宽">宽</button>
-          </div>
-          <button class="icon-button" data-action="agent" aria-label="隐藏 AI 对话面板" title="隐藏">×</button>
-        </div>
-        <div class="agent-body" id="agent-body"></div>
-        <div class="agent-foot">
-          <button class="primary" data-action="agent-build">整理本页要点</button>
-          <button data-action="agent-demo">模拟回复自检</button>
-        </div>
-      </aside>
     </div>
     <footer class="footer">小呼宝 · 与 PF-ILD 患者和照护者一起整理、理解、准备沟通 <span class="ver-line"><b id="app-version">__VERSION_DISPLAY__</b><em id="app-build">__BUILD_DATE__</em></span></footer>
   </div>
