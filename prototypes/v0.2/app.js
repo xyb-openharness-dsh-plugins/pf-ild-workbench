@@ -925,20 +925,12 @@
     toast('复制失败：可以手动选中草稿');
   }
 
-  function toggleAgent(force) {
-    state.agentOpen = typeof force === 'boolean' ? force : !state.agentOpen;
-    $('#agent-dock').hidden = !state.agentOpen;
-    $('#work-grid').classList.toggle('agent-open', state.agentOpen);
-    $('#agent-toggle').setAttribute('aria-expanded', String(state.agentOpen));
-    $('#agent-state').textContent = state.agentOpen ? '已进入激活' : '未进入激活';
-    $('#agent-dot').classList.toggle('on', state.agentOpen);
-    if (state.agentOpen && !$('#agent-body').dataset.init) {
-      $('#agent-body').dataset.init = '1';
-      $('#agent-body').innerHTML = `<div class="agent-empty">这里是与本机 Agent 的原生会话面板。<br><br>
-        · 会话由宿主按本工作台会话授权，重启后需重新创建；<br>
-        · 页面上的「与 AI 一起整理」会把<b>已记录内容</b>整理成草稿，<b>只填入输入框、不自动发送</b>；<br>
-        · 私密记录默认不带入。</div>`;
-    }
+  /* 原生会话由宿主提供：页面只请求它把会话叫到前台，不在页面里自建聊天面板 */
+  function openAgentPane() {
+    if (!agentHostAvailable()) { toast('独立打开时没有会话面板：在 DSH Desktop 里打开工作台即可对话'); return }
+    try { window.parent.postMessage({ type: 'pf-ild:agent-open' }, window.location.origin) }
+    catch (e) { toast('没能请出会话面板；页面里的「与 AI 一起整理」仍可复制草稿') }
+    const st = $('#agent-state'); if (st) st.textContent = '已请求打开'
   }
 
   /* ---------------- 指标卡翻面 ----------------
@@ -990,24 +982,10 @@
     if (action === 'help') { openDialog('原型操作说明', `<div class="rows">
       ${rowHTML({ title: '切换页面', desc: '左侧导航 11 项：看板 + 10 条业务功能线。' })}
       ${rowHTML({ title: '二级页签', desc: '页面标题下方按钮切换；每页二级按场景分步。' })}
-      ${rowHTML({ title: 'AI 面板', desc: '顶栏「AI 对话」开关；可隐藏重开，隐藏不清空草稿。' })}
+      ${rowHTML({ title: 'AI 对话', desc: '顶栏「AI 对话」请出宿主原生会话；页面里的「与 AI 一起整理」只把草稿填进会话，不自动发送。' })}
       ${rowHTML({ title: '折叠卡', desc: '治疗路径默认收起，点开看五块细节。' })}
     </div>`, '<button class="soft" data-action="close">关闭</button>'); return; }
-    if (action === 'agent') { toggleAgent(); return; }
-    if (action === 'agent-size') {
-      const w = { narrow: '24%', std: '32%', wide: '44%' }[el.dataset.size];
-      $('#work-grid').style.setProperty('--agent-w', w);
-      document.querySelectorAll('[data-action="agent-size"]').forEach((b) => b.setAttribute('aria-pressed', String(b === el)));
-      toast(`面板宽度：${el.textContent}`);
-      return;
-    }
-    if (action === 'agent-build') {
-      const { lines, label } = contextFor(state.view);
-      $('#agent-body').insertAdjacentHTML('beforeend', `<div class="msg me">整理「${esc(label)}」要点</div><div class="msg">已读取 ${lines.length} 条已记录内容，整理成草稿放在输入框（未发送）。</div>`);
-      openAgentDraft(state.view, `帮我把「${label}」这一页的内容整理成复诊准备材料。`);
-      return;
-    }
-    if (action === 'agent-demo') { $('#agent-body').insertAdjacentHTML('beforeend', '<div class="msg">（模拟回复自检：面板可用，未连接模型。）</div>'); return; }
+    if (action === 'agent-open') { openAgentPane(); return; }
     if (action === 'agent-draft') { openAgentDraft(el.dataset.page, el.dataset.prompt); return; }
     if (action === 'agent-send') { agentSend(); return; }
     if (action === 'agent-copy') { agentCopy(); return; }
@@ -1057,7 +1035,7 @@
   maybeOpenFromHash();
   if (state._wantProbe === 'resp') runResponsiveProbe();
   function maybeOpenFromHash() {
-    if (state._wantAgent) toggleAgent(true);
+    if (state._wantAgent) openAgentPane();
     if (state._wantDraft) { const { label } = contextFor(state.view); openAgentDraft(state.view, `帮我把「${label}」这一页的记录整理成复诊材料。`); }
   }
 })();

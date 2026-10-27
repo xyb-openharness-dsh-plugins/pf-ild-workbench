@@ -20,7 +20,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PANEL } from '../lib/layout.js';
+import { PANEL, AGENT_PANE } from '../lib/layout.js';
 import { version } from '../lib/version.js';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -43,11 +43,13 @@ const out = `${banner}window.__ModuleLoader__.load({
     const React = require('react')
     /* 注入点：与 lib/layout.js 同源，客户端不许另写一份 0.65 */
     const __PANEL_LAYOUT__ = ${JSON.stringify(PANEL)}
+    /* 会话面板参数（默认/最小/最大/步进）同源于 lib/layout.js */
+    const __AGENT_PANE__ = ${JSON.stringify(AGENT_PANE)}
     const __VERSION__ = ${JSON.stringify(version)}
 
 ${body.split('\n').map((line) => (line.trim() === '' ? '' : '    ' + line)).join('\n')}
 
-    return { apply, inject: ['desktopWorkbenches'] }
+    return { apply, inject: INJECT }
   }
 })
 `;
