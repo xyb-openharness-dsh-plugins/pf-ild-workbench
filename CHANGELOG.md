@@ -2,6 +2,12 @@
 
 家族口径：只写「版本 · 日期 · 改了什么 · 依据」，不写营销话术。
 
+## v0.2.6 · 2026-10-28
+
+- 复核 A 家族面板基线并补齐一处缺口：宿主没有 `ensureSession` 时，「AI 对话」按钮保持禁用，同时在顶栏**常驻写明原因**（`NO_SESSION_CAPABILITY_NOTE`）。此前只有点击后才写 note，按钮被禁用时用户看不到任何解释；且会话订阅回调的 `setNote('')` 也可能把说明冲掉，现改为渲染期兜底（`shownNote`）。
+- 其余基线项核实无缺：`customFrame: true`、`Panel({ conversation })`、1px 绝对定位分隔线（`right: percent%`、`marginRight: -0.5`）+ 11px 透明热区、品牌色悬停 6px/拖动 10px 发光、⠿ 14×22 把手、拖动遮罩、`setPointerCapture` 降级、25%–45%（默认 35%、步进 2%、localStorage、键盘 ←/→/Home/End）、容器 <760px 覆盖式抽屉、`aside` 常挂载 + `display` 显隐。
+- `lib/client.js` 由 `npm run build:client` 重新生成，与 `src/client.js` 同步。
+
 ## v0.2.5 · 2026-10-28
 
 - 自建 AI 面板（不再依赖宿主绘制会话栏）：`customFrame: true`，`Panel` 接收并使用宿主传入的 `conversation`，业务 iframe 与会话 `aside` 之间按家族基线排 1px 分隔线（11px 透明热区、品牌色悬停发光、⠿ 把手、拖动遮罩、`setPointerCapture`）。

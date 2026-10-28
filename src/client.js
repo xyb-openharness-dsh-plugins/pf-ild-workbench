@@ -37,6 +37,9 @@ export const INJECT = ['desktopWorkbenches', 'sessions']
 /* 等待 iframe 首次 load 的宽限：宿主刚重启时插件可能还没就绪，过早报错会吓人 */
 const LOAD_GRACE_MS = 8000
 
+/* 宿主缺 ensureSession 时按钮禁用，同时把原因写到顶栏：不能点了没反应，也不能只留灰按钮 */
+const NO_SESSION_CAPABILITY_NOTE = '当前 Desktop 版本不支持从面板调起会话；请从左侧会话列表新建会话'
+
 /* 会话面板参数：由 scripts/build-client.mjs 从 lib/layout.js 的 AGENT_PANE 注入 */
 const AGENT = __AGENT_PANE__
 const AGENT_DEFAULT = Number(AGENT.default)
@@ -323,7 +326,7 @@ export function buildPanel(React, layout, host) {
     async function openAgent(prompt = null) {
       setNote('')
       if (!canOpenSession) {
-        setNote('当前 Desktop 版本不支持从面板调起会话；请从左侧会话列表新建会话')
+        setNote(NO_SESSION_CAPABILITY_NOTE)
         return
       }
       const existing = ownedSession()
@@ -390,6 +393,8 @@ export function buildPanel(React, layout, host) {
       : connecting ? '正在连接…'
         : !hasConversation ? 'AI 对话'
           : paneOpen ? '收起 AI 对话' : '打开 AI 对话'
+    // 能力缺失时的说明不能被会话订阅回调里的 setNote('') 冲掉：渲染期兜一层。
+    const shownNote = note || (canOpenSession ? '' : NO_SESSION_CAPABILITY_NOTE)
 
     if (phase === 'broken') {
       return h('main', {
@@ -419,8 +424,8 @@ export function buildPanel(React, layout, host) {
         h('span', null, `${META.icon} ${META.panelTitle}`),
         h('span', { 'aria-hidden': true }, '·'),
         h('span', { 'aria-live': 'polite' }, version ? `v${version}` : '连接中'),
-        h('span', { style: hintStyle, title: note || '界面由 public/ 提供，与原型同源' },
-          note || '本机数据'),
+        h('span', { style: hintStyle, title: shownNote || '界面由 public/ 提供，与原型同源' },
+          shownNote || '本机数据'),
         h('button', {
           type: 'button',
           style: buttonStyle,
